@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ## [Unreleased]
 
+TBD
+
+## [9.0.0] - 2026-08-12
+
+> 🟥 __IMPORTANT__ 🟥
+>
+> - this is the first release of the [`shepherd44/airflow-helm-charts`](https://github.com/shepherd44/airflow-helm-charts) fork, which is maintained independently of the [upstream chart](https://github.com/airflow-helm/charts) (unreleased since `8.9.0`, 2024-04-30)
+> - the chart is published to `https://shepherd44.github.io/airflow-helm-charts`, so version numbers from `9.0.0` onwards are NOT related to upstream releases
+
 > 🟨 __NOTES__ 🟨
 >
 > - the default git-sync image is now `registry.k8s.io/git-sync/git-sync:v4.7.1` (previously `v3.6.9`), which is a major version upgrade of [git-sync](https://github.com/kubernetes/git-sync/blob/master/v3-to-v4.md)
@@ -822,7 +831,8 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 >
 > - To read about versions `7.0.0` and before, please see the [legacy repo](https://github.com/helm/charts/tree/master/stable/airflow).
 
-[Unreleased]: https://github.com/airflow-helm/charts/compare/airflow-8.9.0...HEAD
+[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-9.0.0...HEAD
+[9.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-8.9.0...airflow-9.0.0
 [8.9.0]: https://github.com/airflow-helm/charts/compare/airflow-8.8.0...airflow-8.9.0
 [8.8.0]: https://github.com/airflow-helm/charts/compare/airflow-8.7.1...airflow-8.8.0
 [8.7.1]: https://github.com/airflow-helm/charts/compare/airflow-8.7.0...airflow-8.7.1

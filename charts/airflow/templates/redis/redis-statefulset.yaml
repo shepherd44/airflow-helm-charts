@@ -1,0 +1,136 @@
+{{- if .Values.redis.enabled }}
+{{- $podNodeSelector := include "airflow.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.redis.nodeSelector) }}
+{{- $podAffinity := include "airflow.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.redis.affinity) }}
+{{- $podTolerations := include "airflow.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.redis.tolerations) }}
+{{- $podSecurityContext := include "airflow.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.redis.securityContext) }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "airflow.redis.fullname" . }}
+  labels:
+    app: {{ include "airflow.labels.app" . }}
+    component: redis
+    chart: {{ include "airflow.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ include "airflow.redis.fullname" . }}
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ include "airflow.labels.app" . }}
+      component: redis
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if or .Values.airflow.podAnnotations .Values.redis.podAnnotations .Values.redis.safeToEvict }}
+      annotations:
+        {{- if .Values.airflow.podAnnotations }}
+        {{- toYaml .Values.airflow.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{- if .Values.redis.podAnnotations }}
+        {{- toYaml .Values.redis.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{- if .Values.redis.safeToEvict }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        {{- end }}
+      {{- end }}
+      labels:
+        app: {{ include "airflow.labels.app" . }}
+        component: redis
+        release: {{ .Release.Name }}
+        {{- if .Values.redis.podLabels }}
+        {{- toYaml .Values.redis.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      restartPolicy: Always
+      {{- if .Values.redis.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.redis.image.pullSecret }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.redis.terminationPeriod }}
+      {{- if $podNodeSelector }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $podAffinity }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+      {{- if $podTolerations }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+      {{- if $podSecurityContext }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- end }}
+      {{- if .Values.redis.priorityClassName }}
+      priorityClassName: {{ .Values.redis.priorityClassName }}
+      {{- end }}
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          command:
+            - "redis-server"
+            - "--requirepass"
+            - "$(REDIS_PASSWORD)"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.redis.existingSecret }}
+                  name: {{ .Values.redis.existingSecret }}
+                  key: {{ .Values.redis.existingSecretPasswordKey }}
+                  {{- else }}
+                  name: {{ include "airflow.redis.fullname" . }}
+                  key: redis-password
+                  {{- end }}
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          livenessProbe:
+            exec:
+              ## NOTE: `redis-cli` exits 0 even when auth fails, so we must check the output
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              ## NOTE: `redis-cli` exits 0 even when auth fails, so we must check the output
+              command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      {{- if not .Values.redis.persistence.enabled }}
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.redis.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes:
+          {{- toYaml .Values.redis.persistence.accessModes | nindent 10 }}
+        {{- if .Values.redis.persistence.storageClass }}
+        storageClassName: {{ .Values.redis.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.persistence.size | quote }}
+  {{- end }}
+{{- end }}

@@ -2211,22 +2211,21 @@ externalDatabase:
 ## DATABASE | Embedded Redis
 ###################################
 redis:
-  ## if the `stable/redis` chart is used
+  ## if the embedded redis is deployed
   ## - set to `false` if `airflow.executor` is `KubernetesExecutor`
   ## - set to `false` if using `externalRedis.*`
   ##
   enabled: true
 
   ## configs for the redis container image
-  ## - [NOTE] `bitnamilegacy/redis` is used because Bitnami removed the old tags
-  ##   from `bitnami/redis` in 2025, and the `stable/redis` sub-chart requires a
-  ##   bitnami-style image
+  ## - [NOTE] we stay on the `7.2` line, as redis changed its license after that
+  ##   release, see: https://redis.io/blog/redis-adopts-dual-source-available-licensing/
   ##
   image:
-    registry: docker.io
-    repository: bitnamilegacy/redis
-    tag: 6.2.14-debian-12-r17
+    repository: redis
+    tag: 7.2-bookworm
     pullPolicy: IfNotPresent
+    pullSecret: ""
 
   ## the redis password
   ##
@@ -2240,121 +2239,77 @@ redis:
   ##
   existingSecretPasswordKey: "redis-password"
 
-  ## configs for redis cluster mode
+  ## resource requests/limits for the redis Pod
+  ## - spec for ResourceRequirements:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core
   ##
-  cluster:
-    ## if redis runs in cluster mode
+  resources: {}
+
+  ## the nodeSelector configs for the redis Pod
+  ## - docs for nodeSelector:
+  ##   https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+  ##
+  nodeSelector: {}
+
+  ## the affinity configs for the redis Pod
+  ## - spec for Affinity:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core
+  ##
+  affinity: {}
+
+  ## the toleration configs for the redis Pod
+  ## - spec for Toleration:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core
+  ##
+  tolerations: []
+
+  ## the security context for the redis Pod
+  ## - spec for PodSecurityContext:
+  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#podsecuritycontext-v1-core
+  ##
+  securityContext: {}
+
+  ## the number of seconds to wait before force killing the redis Pod
+  ##
+  terminationPeriod: 30
+
+  ## if the redis Pod is safe to evict by the cluster-autoscaler
+  ## - [WARNING] the celery broker is not persisted by default, so evicting the Pod
+  ##   will re-queue any tasks which were in flight
+  ##
+  safeToEvict: true
+
+  ## annotations for the redis Pod
+  ##
+  podAnnotations: {}
+
+  ## labels for the redis Pod
+  ##
+  podLabels: {}
+
+  ## the priorityClassName for the redis Pod
+  ##
+  priorityClassName: ""
+
+  ## configs for the PVC of the redis Pod
+  ##
+  persistence:
+    ## use a PVC to persist the celery broker queue
     ##
     enabled: false
 
-    ## the number of redis slaves
+    ## the name of the StorageClass used by the PVC
     ##
-    slaveCount: 1
+    storageClass: ""
 
-  ## configs for the redis master StatefulSet
-  ##
-  master:
-    ## resource requests/limits for the redis master Pods
-    ## - spec for ResourceRequirements:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core
+    ## the access mode of the PVC
     ##
-    resources: {}
+    accessModes:
+      - ReadWriteOnce
 
-    ## the nodeSelector configs for the redis master Pods
-    ## - docs for nodeSelector:
-    ##   https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+    ## the size of PVC to request
     ##
-    nodeSelector: {}
-
-    ## the affinity configs for the redis master Pods
-    ## - spec for Affinity:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core
-    ##
-    affinity: {}
-
-    ## the toleration configs for the redis master Pods
-    ## - spec for Toleration:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core
-    ##
-    tolerations: []
-
-    ## annotations for the redis master Pods
-    ##
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
-    ## configs for the PVC of the redis master Pods
-    ##
-    persistence:
-      ## use a PVC to persist data
-      ##
-      enabled: false
-
-      ## the name of the StorageClass used by the PVC
-      ##
-      storageClass: ""
-
-      ## the access mode of the PVC
-      ##
-      accessModes:
-        - ReadWriteOnce
-
-      ## the size of PVC to request
-      ##
-      size: 8Gi
-
-  ## configs for the redis slave StatefulSet
-  ## - only used if `redis.cluster.enabled` is `true`
-  ##
-  slave:
-    ## resource requests/limits for the slave Pods
-    ## - spec for ResourceRequirements:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core
-    ##
-    resources: {}
-
-    ## the nodeSelector configs for the redis slave Pods
-    ## - docs for nodeSelector:
-    ##   https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
-    ##
-    nodeSelector: {}
-
-    ## the affinity configs for the redis slave Pods
-    ## - spec for Affinity:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core
-    ##
-    affinity: {}
-
-    ## the toleration configs for the redis slave Pods
-    ## - spec for Toleration:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core
-    ##
-    tolerations: []
-
-    ## annotations for the slave Pods
-    ##
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
-    ## configs for the PVC of the redis slave Pods
-    ##
-    persistence:
-      ## use a PVC to persist data
-      ##
-      enabled: false
-
-      ## the name of the StorageClass used by the PVC
-      ##
-      storageClass: ""
-
-      ## the access mode of the PVC
-      ##
-      accessModes:
-        - ReadWriteOnce
-
-      ## the size of PVC to request
-      ##
-      size: 8Gi
+    size: 8Gi
 
 ###################################
 ## DATABASE | External Redis

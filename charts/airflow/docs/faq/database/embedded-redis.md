@@ -18,7 +18,7 @@ For example, to use a pre-created Secret called `airflow-redis` that contains a 
 ```yaml
 redis:
   existingSecret: airflow-redis
-  existingSecretKey: redis-password
+  existingSecretPasswordKey: redis-password
 ```
 
 > 🟦 __Tip__ 🟦

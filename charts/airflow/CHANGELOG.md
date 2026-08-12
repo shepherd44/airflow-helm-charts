@@ -8,6 +8,31 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [10.0.0] - 2026-08-13
+
+> 🟥 __IMPORTANT__ 🟥
+>
+> - the embedded redis is no longer the `stable/redis` sub-chart, it is now defined by the chart itself (like the [official apache/airflow chart](https://github.com/apache/airflow/tree/main/chart/templates/redis) does), because `https://charts.helm.sh/stable` is archived and its images are no longer published
+> - the embedded redis is now a SINGLE Pod running the official `redis` image, there is no master/slave replication (the celery broker only ever used the master)
+
+> 🟨 __NOTES__ 🟨
+>
+> - the redis resources are renamed from `<release>-redis-master` to `<release>-redis` (the Secret keeps the name `<release>-redis`), so the old StatefulSet, Service, and PVC are replaced on upgrade
+> - the celery broker is NOT persisted by default, so any tasks queued but not yet started at the moment of the upgrade are lost and must be re-run
+> - the `redis.cluster.*`, `redis.slave.*`, `redis.image.registry`, `redis.nameOverride`, and `redis.fullnameOverride` values are REMOVED
+> - the `redis.master.*` values are moved up one level (for example, `redis.master.resources` is now `redis.resources`, and `redis.master.persistence.*` is now `redis.persistence.*`)
+> - if you pin `redis.image.repository` to a bitnami image, you must now set it to the official `redis` image, because the chart no longer runs a bitnami entrypoint
+
+### Changed
+- the embedded redis is now defined by this chart, rather than by the `stable/redis` sub-chart
+- the default embedded redis image is now `redis:7.2-bookworm` (previously `bitnamilegacy/redis:6.2.14-debian-12-r17`)
+- the `redis.master.*` values are moved up one level, to `redis.*`
+
+### Removed
+- the `stable/redis` chart dependency
+- the `redis.cluster.*` and `redis.slave.*` values (there is no redis replication anymore)
+- the `redis.image.registry`, `redis.nameOverride`, and `redis.fullnameOverride` values
+
 ## [9.0.0] - 2026-08-12
 
 > 🟥 __IMPORTANT__ 🟥
@@ -832,7 +857,8 @@ TBD
 >
 > - To read about versions `7.0.0` and before, please see the [legacy repo](https://github.com/helm/charts/tree/master/stable/airflow).
 
-[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-9.0.0...HEAD
+[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.0.0...HEAD
+[10.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-9.0.0...airflow-10.0.0
 [9.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-8.9.0...airflow-9.0.0
 [8.9.0]: https://github.com/airflow-helm/charts/compare/airflow-8.8.0...airflow-8.9.0
 [8.8.0]: https://github.com/airflow-helm/charts/compare/airflow-8.7.1...airflow-8.8.0

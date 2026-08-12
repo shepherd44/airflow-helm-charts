@@ -24,6 +24,7 @@ TBD
 
 ### Changed
 - the default git-sync image is now `registry.k8s.io/git-sync/git-sync:v4.7.1`
+- the default embedded redis image is now `bitnamilegacy/redis:6.2.14-debian-12-r17`, because Bitnami deleted the old tags of `bitnami/redis` from Docker Hub
 - the git-sync container now uses the `GITSYNC_*` environment variables (git-sync v4), rather than the `GIT_SYNC_*` ones (git-sync v3)
 - `dags.gitSync.syncWait` and `dags.gitSync.syncTimeout` now also accept Go duration strings (for example `1m`), while plain numbers are still treated as seconds
 - `dags.gitSync.branch` may now be `""` to sync the default branch of the remote repo

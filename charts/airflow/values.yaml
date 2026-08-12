@@ -2218,10 +2218,13 @@ redis:
   enabled: true
 
   ## configs for the redis container image
+  ## - [NOTE] `bitnamilegacy/redis` is used because Bitnami removed the old tags
+  ##   from `bitnami/redis` in 2025, and the `stable/redis` sub-chart requires a
+  ##   bitnami-style image
   ##
   image:
     registry: docker.io
-    repository: bitnami/redis
+    repository: bitnamilegacy/redis
     tag: 6.2.14-debian-12-r17
     pullPolicy: IfNotPresent
 

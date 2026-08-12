@@ -531,7 +531,7 @@ Parameter | Description | Default
 Parameter | Description | Default
 --- | --- | ---
 `redis.enabled` | if the embedded celery broker is deployed | `true`
-`redis.image.*` | configs for the celery broker container image (valkey by default) | `<see values.yaml>`
+`redis.image.*` | configs for the celery broker container image | `<see values.yaml>`
 `redis.password` | the redis password | `airflow`
 `redis.existingSecret` | the name of a pre-created secret containing the redis password | `""`
 `redis.existingSecretPasswordKey` | the key within `redis.existingSecret` containing the password string | `redis-password`

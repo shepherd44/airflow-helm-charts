@@ -8,19 +8,28 @@
 >
 > You may consider using an [external redis](external-redis.md) rather than the embedded one.
 
-## Redis or Valkey?
+## Use Valkey Instead of Redis
 
-The embedded celery broker runs [valkey](https://valkey.io/) by default, the BSD-licensed fork of redis 7.2.4 which is governed by the Linux Foundation.
-It is a drop-in replacement: the image ships `redis-server` and `redis-cli` as symlinks, it speaks the same protocol, and it reports `redis_version:7.2.4` to clients.
-
-If you would rather run redis, only the image needs to change:
+The embedded celery broker runs the official `redis` image by default.
+If you would rather run [valkey](https://valkey.io/) — the BSD-3 licensed fork of redis 7.2.4, governed by the Linux Foundation — only the image needs to change:
 
 ```yaml
 redis:
   image:
-    repository: redis
-    tag: 7.2-bookworm
+    repository: valkey/valkey
+    tag: 9.1-trixie
 ```
+
+Nothing else in the chart changes, because the valkey image ships `redis-server` and `redis-cli` as symlinks to the valkey binaries, so the broker command and the health probes keep working as-is.
+
+> 🟦 __Tip__ 🟦
+>
+> Valkey reports `redis_version:7.2.4` in `INFO server` (alongside `server_name:valkey` and its own `valkey_version`), which is what keeps redis clients happy.
+> Celery/kombu connect over the same `redis://` URL, so `externalRedis.*` also works against a valkey server.
+
+> 🟨 __NOTE__ 🟨
+>
+> `valkey/valkey` is published by the valkey project rather than being a [Docker Official Image](https://docs.docker.com/trusted-content/official-images/), and it has no `bookworm` tags (use `trixie` or `alpine`).
 
 ## Set a Custom Password
 

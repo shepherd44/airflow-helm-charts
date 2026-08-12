@@ -13,9 +13,8 @@ TBD
 > 🟥 __IMPORTANT__ 🟥
 >
 > - the embedded celery broker is no longer the `stable/redis` sub-chart, it is now defined by the chart itself (like the [official apache/airflow chart](https://github.com/apache/airflow/tree/main/chart/templates/redis) does), because `https://charts.helm.sh/stable` is archived and its images are no longer published
-> - the embedded celery broker now runs [valkey](https://valkey.io/) (the BSD-licensed fork of redis 7.2.4, governed by the Linux Foundation) rather than redis, because redis relicensed away from BSD in 2024
-> - valkey is a drop-in replacement (it ships `redis-server` and `redis-cli` as symlinks, and reports `redis_version:7.2.4`), so you can still set `redis.image.repository` back to `redis` if you prefer it
 > - the embedded celery broker is now a SINGLE Pod, there is no master/slave replication (the broker only ever used the master)
+> - you may run [valkey](https://valkey.io/) instead of redis by changing `redis.image.*` only, see [`Configure Redis (Built-In)`](docs/faq/database/embedded-redis.md)
 
 > 🟨 __NOTES__ 🟨
 >
@@ -27,7 +26,7 @@ TBD
 
 ### Changed
 - the embedded celery broker is now defined by this chart, rather than by the `stable/redis` sub-chart
-- the default embedded celery broker image is now `valkey/valkey:9.1-trixie` (previously `bitnamilegacy/redis:6.2.14-debian-12-r17`)
+- the default embedded celery broker image is now `redis:8.10-trixie` (previously `bitnamilegacy/redis:6.2.14-debian-12-r17`)
 - the `redis.master.*` values are moved up one level, to `redis.*`
 
 ### Removed

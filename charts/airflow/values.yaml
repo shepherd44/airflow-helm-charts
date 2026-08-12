@@ -2218,15 +2218,15 @@ redis:
   enabled: true
 
   ## configs for the celery broker container image
-  ## - [NOTE] the default is valkey (the BSD-licensed fork of redis 7.2.4, governed
-  ##   by the Linux Foundation), because redis relicensed away from BSD in 2024,
-  ##   see: https://valkey.io/
-  ## - [NOTE] the valkey image ships `redis-server` and `redis-cli` as symlinks, so
-  ##   `redis:7.2-bookworm` (or any other redis image) also works if you prefer it
+  ## - [NOTE] redis 8 is available under the AGPLv3, so it is open-source again
+  ##   after the 2024 relicensing, see: https://redis.io/blog/agplv3/
+  ## - [NOTE] valkey may be used instead (it ships `redis-server` and `redis-cli`
+  ##   as symlinks, so only the image needs to change), see the FAQ:
+  ##   docs/faq/database/embedded-redis.md
   ##
   image:
-    repository: valkey/valkey
-    tag: 9.1-trixie
+    repository: redis
+    tag: 8.10-trixie
     pullPolicy: IfNotPresent
     pullSecret: ""
 

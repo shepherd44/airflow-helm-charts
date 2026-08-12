@@ -1525,7 +1525,7 @@ dags:
     ##
     image:
       repository: registry.k8s.io/git-sync/git-sync
-      tag: v3.6.9
+      tag: v4.7.1
       pullPolicy: IfNotPresent
       uid: 65533
       gid: 65533
@@ -1555,22 +1555,29 @@ dags:
     repoSubPath: ""
 
     ## the git branch to check out
+    ## - if set to "", the default branch of the remote repo is used
+    ## - [WARNING] must be empty if `dags.gitSync.revision` is a tag or hash
     ##
     branch: master
 
-    ## the git revision (tag or hash) to check out
+    ## the git revision (tag or full commit hash) to check out
+    ## - if set to "HEAD" or "", the HEAD of `dags.gitSync.branch` is used
+    ## - [WARNING] abbreviated commit hashes are NOT supported (git-sync v4 requires the full hash)
     ##
     revision: HEAD
 
     ## shallow clone with a history truncated to the specified number of commits
+    ## - if set to 0, the full history is cloned
     ##
     depth: 1
 
     ## the number of seconds between syncs
+    ## - can also be a Go duration string (for example "1m" or "500ms")
     ##
     syncWait: 60
 
     ## the max number of seconds allowed for a complete sync
+    ## - can also be a Go duration string (for example "2m")
     ##
     syncTimeout: 120
 
@@ -1610,8 +1617,8 @@ dags:
     sshKnownHosts: ""
 
     ## the number of consecutive failures allowed before aborting
-    ##  - the first sync must succeed
-    ##  - a value of -1 will retry forever after the initial sync
+    ##  - a value of -1 will retry forever
+    ##  - [NOTE] unlike git-sync v3, the first sync is also allowed to fail this many times
     ##
     maxFailures: 0
 

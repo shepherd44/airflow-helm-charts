@@ -1,0 +1,10 @@
+## this values file tests the git-sync sidecar
+##
+dags:
+  gitSync:
+    enabled: true
+    repo: "https://github.com/airflow-helm/charts.git"
+
+    ## NOTE: an empty `branch` syncs the default branch of the remote repo
+    branch: ""
+    repoSubPath: "charts/airflow/examples"

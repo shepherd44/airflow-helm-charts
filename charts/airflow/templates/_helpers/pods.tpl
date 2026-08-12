@@ -245,54 +245,55 @@ EXAMPLE USAGE: {{ include "airflow.container.git_sync" (dict "Release" .Release 
   envFrom:
     {{- include "airflow.envFrom" . | indent 4 }}
   env:
+    {{- /* git-sync v4 renamed all `GIT_SYNC_*` env vars to `GITSYNC_*`, see: https://github.com/kubernetes/git-sync/blob/master/v3-to-v4.md */}}
     {{- if .sync_one_time }}
-    - name: GIT_SYNC_ONE_TIME
+    - name: GITSYNC_ONE_TIME
       value: "true"
     {{- end }}
-    - name: GIT_SYNC_ROOT
+    - name: GITSYNC_ROOT
       value: "/dags"
-    - name: GIT_SYNC_DEST
+    - name: GITSYNC_LINK
       value: "repo"
-    - name: GIT_SYNC_REPO
+    - name: GITSYNC_REPO
       value: {{ .Values.dags.gitSync.repo | quote }}
-    - name: GIT_SYNC_BRANCH
-      value: {{ .Values.dags.gitSync.branch | quote }}
-    - name: GIT_SYNC_REV
-      value: {{ .Values.dags.gitSync.revision | quote }}
-    - name: GIT_SYNC_DEPTH
+    {{- /* git-sync v4 has a single `--ref` (branch, tag, or full hash) rather than `--branch` and `--rev` */}}
+    {{- $ref := include "airflow.gitSync.ref" . }}
+    {{- if $ref }}
+    - name: GITSYNC_REF
+      value: {{ $ref | quote }}
+    {{- end }}
+    - name: GITSYNC_DEPTH
       value: {{ .Values.dags.gitSync.depth | quote }}
-    - name: GIT_SYNC_WAIT
-      value: {{ .Values.dags.gitSync.syncWait | quote }}
-    - name: GIT_SYNC_TIMEOUT
-      value: {{ .Values.dags.gitSync.syncTimeout | quote }}
-    - name: GIT_SYNC_ADD_USER
+    - name: GITSYNC_PERIOD
+      value: {{ include "airflow.gitSync.duration" .Values.dags.gitSync.syncWait | quote }}
+    - name: GITSYNC_SYNC_TIMEOUT
+      value: {{ include "airflow.gitSync.duration" .Values.dags.gitSync.syncTimeout | quote }}
+    - name: GITSYNC_ADD_USER
       value: "true"
-    - name: GIT_SYNC_MAX_SYNC_FAILURES
+    - name: GITSYNC_MAX_FAILURES
       value: {{ .Values.dags.gitSync.maxFailures | quote }}
-    - name: GIT_SYNC_SUBMODULES
+    - name: GITSYNC_SUBMODULES
       value: {{ .Values.dags.gitSync.submodules | quote }}
     {{- if .Values.dags.gitSync.sshSecret }}
-    - name: GIT_SYNC_SSH
-      value: "true"
-    - name: GIT_SSH_KEY_FILE
+    - name: GITSYNC_SSH_KEY_FILE
       value: "/etc/git-secret/id_rsa"
     {{- end }}
     {{- if .Values.dags.gitSync.sshKnownHosts }}
-    - name: GIT_KNOWN_HOSTS
+    - name: GITSYNC_SSH_KNOWN_HOSTS
       value: "true"
-    - name: GIT_SSH_KNOWN_HOSTS_FILE
+    - name: GITSYNC_SSH_KNOWN_HOSTS_FILE
       value: "/etc/git-secret/known_hosts"
     {{- else }}
-    - name: GIT_KNOWN_HOSTS
+    - name: GITSYNC_SSH_KNOWN_HOSTS
       value: "false"
     {{- end }}
     {{- if .Values.dags.gitSync.httpSecret }}
-    - name: GIT_SYNC_USERNAME
+    - name: GITSYNC_USERNAME
       valueFrom:
         secretKeyRef:
           name: {{ .Values.dags.gitSync.httpSecret }}
           key: {{ .Values.dags.gitSync.httpSecretUsernameKey }}
-    - name: GIT_SYNC_PASSWORD
+    - name: GITSYNC_PASSWORD
       valueFrom:
         secretKeyRef:
           name: {{ .Values.dags.gitSync.httpSecret }}

@@ -97,6 +97,32 @@ The path containing DAG files
 {{- end -}}
 
 {{/*
+The git-sync `--ref` value (a branch, tag, or full commit hash) derived from `dags.gitSync.branch` and `dags.gitSync.revision`.
+- an empty output means "use the default branch of the remote repo"
+*/}}
+{{- define "airflow.gitSync.ref" -}}
+{{- $revision := .Values.dags.gitSync.revision | toString -}}
+{{- if or (eq $revision "HEAD") (eq $revision "") -}}
+{{- .Values.dags.gitSync.branch | toString -}}
+{{- else -}}
+{{- $revision -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Convert a git-sync duration value into a Go duration string (git-sync v4 requires units, v3 took bare seconds).
+EXAMPLE USAGE: {{ include "airflow.gitSync.duration" .Values.dags.gitSync.syncWait }}
+*/}}
+{{- define "airflow.gitSync.duration" -}}
+{{- $value := . | toString -}}
+{{- if regexMatch "^[0-9]+(\\.[0-9]+)?$" $value -}}
+{{- printf "%ss" $value -}}
+{{- else -}}
+{{- $value -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Helper template which checks if `logs.path` is stored under any of the passed `volumeMounts`.
 EXAMPLE USAGE: {{ include "airflow._has_logs_path" (dict "Values" .Values "volume_mounts" .Values.xxxx.extraVolumeMounts) }}
 */}}

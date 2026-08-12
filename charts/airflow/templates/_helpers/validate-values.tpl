@@ -130,6 +130,11 @@
   {{- if and (.Values.dags.gitSync.repo | lower | hasPrefix "git@github.com") (not .Values.dags.gitSync.sshSecret) }}
   {{ required "You must define `dags.gitSync.sshSecret` when using GitHub with SSH for `dags.gitSync.repo`!" nil }}
   {{- end }}
+  {{/* git-sync v4 has a single `--ref`, so a branch AND a tag/hash can no longer be combined */}}
+  {{- $revision := .Values.dags.gitSync.revision | toString }}
+  {{- if and (.Values.dags.gitSync.branch) (ne $revision "HEAD") (ne $revision "") }}
+  {{ required "At most, one of `dags.gitSync.branch` and `dags.gitSync.revision` can be defined (set `dags.gitSync.branch` to \"\" when using a tag or commit hash)!" nil }}
+  {{- end }}
 {{- end }}
 
 {{/* Checks for `ingress` */}}

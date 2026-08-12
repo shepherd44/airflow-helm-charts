@@ -6,7 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ## [Unreleased]
 
-TBD
+> 🟨 __NOTES__ 🟨
+>
+> - the default git-sync image is now `registry.k8s.io/git-sync/git-sync:v4.7.1` (previously `v3.6.9`), which is a major version upgrade of [git-sync](https://github.com/kubernetes/git-sync/blob/master/v3-to-v4.md)
+> - if you pin `dags.gitSync.image.tag` to a `v3.X.X` image, you must now set it to a `v4.X.X` image, because the chart sets the new `GITSYNC_*` environment variables
+> - if you set BOTH `dags.gitSync.branch` and a tag/hash in `dags.gitSync.revision`, the chart now fails, because git-sync v4 has a single `--ref` flag (set `dags.gitSync.branch` to `""` when using a tag or commit hash)
+> - if `dags.gitSync.revision` is a commit hash, it must now be the FULL hash, because git-sync v4 no longer expands abbreviated hashes
+
+### Changed
+- the default git-sync image is now `registry.k8s.io/git-sync/git-sync:v4.7.1`
+- the git-sync container now uses the `GITSYNC_*` environment variables (git-sync v4), rather than the `GIT_SYNC_*` ones (git-sync v3)
+- `dags.gitSync.syncWait` and `dags.gitSync.syncTimeout` now also accept Go duration strings (for example `1m`), while plain numbers are still treated as seconds
+- `dags.gitSync.branch` may now be `""` to sync the default branch of the remote repo
 
 ## [8.9.0] - 2024-04-30
 

@@ -12,8 +12,10 @@ TBD
 
 > 🟥 __IMPORTANT__ 🟥
 >
-> - the embedded redis is no longer the `stable/redis` sub-chart, it is now defined by the chart itself (like the [official apache/airflow chart](https://github.com/apache/airflow/tree/main/chart/templates/redis) does), because `https://charts.helm.sh/stable` is archived and its images are no longer published
-> - the embedded redis is now a SINGLE Pod running the official `redis` image, there is no master/slave replication (the celery broker only ever used the master)
+> - the embedded celery broker is no longer the `stable/redis` sub-chart, it is now defined by the chart itself (like the [official apache/airflow chart](https://github.com/apache/airflow/tree/main/chart/templates/redis) does), because `https://charts.helm.sh/stable` is archived and its images are no longer published
+> - the embedded celery broker now runs [valkey](https://valkey.io/) (the BSD-licensed fork of redis 7.2.4, governed by the Linux Foundation) rather than redis, because redis relicensed away from BSD in 2024
+> - valkey is a drop-in replacement (it ships `redis-server` and `redis-cli` as symlinks, and reports `redis_version:7.2.4`), so you can still set `redis.image.repository` back to `redis` if you prefer it
+> - the embedded celery broker is now a SINGLE Pod, there is no master/slave replication (the broker only ever used the master)
 
 > 🟨 __NOTES__ 🟨
 >
@@ -21,11 +23,11 @@ TBD
 > - the celery broker is NOT persisted by default, so any tasks queued but not yet started at the moment of the upgrade are lost and must be re-run
 > - the `redis.cluster.*`, `redis.slave.*`, `redis.image.registry`, `redis.nameOverride`, and `redis.fullnameOverride` values are REMOVED
 > - the `redis.master.*` values are moved up one level (for example, `redis.master.resources` is now `redis.resources`, and `redis.master.persistence.*` is now `redis.persistence.*`)
-> - if you pin `redis.image.repository` to a bitnami image, you must now set it to the official `redis` image, because the chart no longer runs a bitnami entrypoint
+> - if you pin `redis.image.repository` to a bitnami image, you must now unset it (or set it to `redis`), because the chart no longer runs a bitnami entrypoint
 
 ### Changed
-- the embedded redis is now defined by this chart, rather than by the `stable/redis` sub-chart
-- the default embedded redis image is now `redis:7.2-bookworm` (previously `bitnamilegacy/redis:6.2.14-debian-12-r17`)
+- the embedded celery broker is now defined by this chart, rather than by the `stable/redis` sub-chart
+- the default embedded celery broker image is now `valkey/valkey:9.1-trixie` (previously `bitnamilegacy/redis:6.2.14-debian-12-r17`)
 - the `redis.master.*` values are moved up one level, to `redis.*`
 
 ### Removed

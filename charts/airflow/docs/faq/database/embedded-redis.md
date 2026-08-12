@@ -8,6 +8,20 @@
 >
 > You may consider using an [external redis](external-redis.md) rather than the embedded one.
 
+## Redis or Valkey?
+
+The embedded celery broker runs [valkey](https://valkey.io/) by default, the BSD-licensed fork of redis 7.2.4 which is governed by the Linux Foundation.
+It is a drop-in replacement: the image ships `redis-server` and `redis-cli` as symlinks, it speaks the same protocol, and it reports `redis_version:7.2.4` to clients.
+
+If you would rather run redis, only the image needs to change:
+
+```yaml
+redis:
+  image:
+    repository: redis
+    tag: 7.2-bookworm
+```
+
 ## Set a Custom Password
 
 The embedded Redis has an insecure password of `airflow` by default which is set by the `redis.password` value.

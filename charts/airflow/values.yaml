@@ -2211,19 +2211,22 @@ externalDatabase:
 ## DATABASE | Embedded Redis
 ###################################
 redis:
-  ## if the embedded redis is deployed
+  ## if the embedded celery broker is deployed
   ## - set to `false` if `airflow.executor` is `KubernetesExecutor`
   ## - set to `false` if using `externalRedis.*`
   ##
   enabled: true
 
-  ## configs for the redis container image
-  ## - [NOTE] we stay on the `7.2` line, as redis changed its license after that
-  ##   release, see: https://redis.io/blog/redis-adopts-dual-source-available-licensing/
+  ## configs for the celery broker container image
+  ## - [NOTE] the default is valkey (the BSD-licensed fork of redis 7.2.4, governed
+  ##   by the Linux Foundation), because redis relicensed away from BSD in 2024,
+  ##   see: https://valkey.io/
+  ## - [NOTE] the valkey image ships `redis-server` and `redis-cli` as symlinks, so
+  ##   `redis:7.2-bookworm` (or any other redis image) also works if you prefer it
   ##
   image:
-    repository: redis
-    tag: 7.2-bookworm
+    repository: valkey/valkey
+    tag: 9.1-trixie
     pullPolicy: IfNotPresent
     pullSecret: ""
 

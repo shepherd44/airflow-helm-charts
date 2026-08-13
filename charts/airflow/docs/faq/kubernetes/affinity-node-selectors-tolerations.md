@@ -70,12 +70,11 @@ postgresql:
     affinity: {}
     tolerations: []
 
-## if using the embedded redis chart, you will also need to define these
+## if using the embedded redis, you will also need to define these
 redis:
-  master:
-    nodeSelector: {}
-    affinity: {}
-    tolerations: []
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 ```
 
 ## Per-Resource Configs

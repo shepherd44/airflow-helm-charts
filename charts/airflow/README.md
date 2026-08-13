@@ -530,14 +530,22 @@ Parameter | Description | Default
 
 Parameter | Description | Default
 --- | --- | ---
-`redis.enabled` | if the `stable/redis` chart is used | `true`
-`redis.image.*` | configs for the redis container image | `<see values.yaml>`
+`redis.enabled` | if the embedded celery broker is deployed | `true`
+`redis.image.*` | configs for the celery broker container image | `<see values.yaml>`
 `redis.password` | the redis password | `airflow`
 `redis.existingSecret` | the name of a pre-created secret containing the redis password | `""`
 `redis.existingSecretPasswordKey` | the key within `redis.existingSecret` containing the password string | `redis-password`
-`redis.cluster.*` | configs for redis cluster mode | `<see values.yaml>`
-`redis.master.*` | configs for the redis master StatefulSet | `<see values.yaml>`
-`redis.slave.*` | configs for the redis slave StatefulSet | `<see values.yaml>`
+`redis.resources` | resource requests/limits for the redis Pod | `{}`
+`redis.nodeSelector` | the nodeSelector configs for the redis Pod | `{}`
+`redis.affinity` | the affinity configs for the redis Pod | `{}`
+`redis.tolerations` | the toleration configs for the redis Pod | `[]`
+`redis.securityContext` | the security context for the redis Pod | `{}`
+`redis.terminationPeriod` | the number of seconds to wait before force killing the redis Pod | `30`
+`redis.safeToEvict` | if the redis Pod is safe to evict by the cluster-autoscaler | `true`
+`redis.podAnnotations` | annotations for the redis Pod | `{}`
+`redis.podLabels` | labels for the redis Pod | `{}`
+`redis.priorityClassName` | the priorityClassName for the redis Pod | `""`
+`redis.persistence.*` | configs for the PVC of the redis Pod | `<see values.yaml>`
 
 </details>
 

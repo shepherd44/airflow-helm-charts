@@ -1,7 +1,7 @@
-FROM alpine:3.19 AS builder
+FROM alpine:3.22 AS builder
 
 # args -- software versions
-ARG PGBOUNCER_VERSION=1.22.1
+ARG PGBOUNCER_VERSION=1.25.2
 
 # install -- pgbouncer build dependanices
 RUN apk --no-cache add \
@@ -16,7 +16,9 @@ RUN apk --no-cache add \
     libtool \
     make \
     openssl-dev \
-    pkgconfig
+    pkgconfig \
+    ## NOTE: pgbouncer >=1.24 builds its man page during `make`, which needs pandoc
+    pandoc-cli
 
 # install -- pgbouncer
 RUN curl -sL "https://www.pgbouncer.org/downloads/files/${PGBOUNCER_VERSION}/pgbouncer-${PGBOUNCER_VERSION}.tar.gz" -o /tmp/pgbouncer.tar.gz \
@@ -29,7 +31,7 @@ RUN curl -sL "https://www.pgbouncer.org/downloads/files/${PGBOUNCER_VERSION}/pgb
  && make \
  && make install
 
-FROM alpine:3.19
+FROM alpine:3.22
 
 # args -- uid/gid
 ARG PGBOUNCER_USER=pgbouncer
@@ -43,20 +45,18 @@ RUN apk --no-cache add \
     dumb-init
 
 # install -- pgbouncer runtime dependanices
+# NOTE: `openssl` replaced `libressl`, which alpine no longer ships,
+#       it is also used by the startup script to generate self-signed certs
 RUN apk --no-cache add \
     c-ares \
     ca-certificates \
     libevent \
-    libressl
+    openssl
 
 # install -- psql and python3 (used in k8s probes)
 RUN apk --no-cache add \
     postgresql-client \
     python3
-
-# install -- openssl (used in startup script to generate self-signed certs)
-RUN apk --no-cache add \
-    openssl
 
 # install -- pgbouncer
 COPY --from=builder /usr/local/bin/pgbouncer /usr/local/bin/pgbouncer

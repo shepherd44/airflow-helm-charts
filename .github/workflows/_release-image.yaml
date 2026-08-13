@@ -32,15 +32,11 @@ on:
         required: true
         type: string
 
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_TOKEN:
-        required: true
-
 jobs:
   create_tag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       TAG_NAME: ${{ steps.push-tag.outputs.TAG_NAME }}
       VERSION_SW_MAJOR: ${{ steps.read-version.outputs.VERSION_SW_MAJOR }}
@@ -66,25 +62,25 @@ jobs:
         run: |
           VERSION_RAW=$(cat $VERSION_FILE_PATH)
           if [[ $VERSION_RAW =~ $VERSION_REGEX ]]; then
-            echo "::set-output name=VERSION_RAW::$VERSION_RAW"
+            echo "VERSION_RAW=$VERSION_RAW" >> "$GITHUB_OUTPUT"
             
             # captures 'A' from 'A.B.C-patch.D'
             VERSION_SW_MAJOR="${BASH_REMATCH[1]}"
-            echo "::set-output name=VERSION_SW_MAJOR::$VERSION_SW_MAJOR"
+            echo "VERSION_SW_MAJOR=$VERSION_SW_MAJOR" >> "$GITHUB_OUTPUT"
             
             # captures '.B' from 'A.B.C-patch.D'
             # (NOTE: if present, will have a '.' prefix, else empty)
             VERSION_SW_MINOR="${BASH_REMATCH[2]}"
-            echo "::set-output name=VERSION_SW_MINOR::$VERSION_SW_MINOR"
+            echo "VERSION_SW_MINOR=$VERSION_SW_MINOR" >> "$GITHUB_OUTPUT"
           
             # captures '.C' from 'A.B.C-patch.D'
             # (NOTE: if present, will have a '.' prefix, else empty)
             VERSION_SW_PATCH="${BASH_REMATCH[3]}"
-            echo "::set-output name=VERSION_SW_PATCH::$VERSION_SW_PATCH"
+            echo "VERSION_SW_PATCH=$VERSION_SW_PATCH" >> "$GITHUB_OUTPUT"
             
             # captures 'D' from 'A.B.C-patch.D'
             VERSION_IMAGE_PATCH="${BASH_REMATCH[4]}"
-            echo "::set-output name=VERSION_IMAGE_PATCH::$VERSION_IMAGE_PATCH"
+            echo "VERSION_IMAGE_PATCH=$VERSION_IMAGE_PATCH" >> "$GITHUB_OUTPUT"
                  
           else
             echo "::error::$VERSION_FILE_PATH must match regex $VERSION_REGEX but got: '$VERSION_RAW'"
@@ -111,11 +107,14 @@ jobs:
               git tag "$TAG_NAME"
               git push origin "$TAG_NAME"
           fi
-          echo "::set-output name=TAG_NAME::$TAG_NAME"
+          echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
   build_and_push_image:
     needs: [ create_tag ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -129,12 +128,6 @@ jobs:
       - name: Install Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -147,7 +140,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            airflowhelm/${{ inputs.image_title }}
             ghcr.io/${{ github.repository_owner }}/${{ inputs.image_title }}
           flavor: |
             latest=${{ inputs.tag_with_latest }}

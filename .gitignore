@@ -41,3 +41,7 @@ Sessionx.vim
 
 ## Chart Dependencies
 **/charts/*.tgz
+
+## OMC agent state (never committed)
+.omc/
+**/.omc/

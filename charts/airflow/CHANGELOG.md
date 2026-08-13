@@ -8,6 +8,17 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [10.1.0] - 2026-08-13
+
+> 🟨 __NOTES__ 🟨
+>
+> - the default pgbouncer image is now built by this repo (from `images/pgbouncer`) and published to `ghcr.io/shepherd44/pgbouncer`, because the upstream `ghcr.io/airflow-helm/pgbouncer` image has not been rebuilt since 2024-04-24
+> - this picks up every pgbouncer security fix released since then: [CVE-2025-2291](https://www.pgbouncer.org/changelog.html) (1.24.1), [CVE-2025-12819](https://www.pgbouncer.org/changelog.html) (1.25.1), and [CVE-2026-6664/6665/6666/6667](https://www.pgbouncer.org/changelog.html) (1.25.2)
+> - the image is a drop-in replacement, no values changes are needed
+
+### Changed
+- the default pgbouncer image is now `ghcr.io/shepherd44/pgbouncer:1.25.2-patch.0` (previously `ghcr.io/airflow-helm/pgbouncer:1.22.1-patch.0`), which upgrades pgbouncer from `1.22.1` to `1.25.2` and alpine from `3.19` to `3.22`
+
 ## [10.0.0] - 2026-08-13
 
 > 🟥 __IMPORTANT__ 🟥
@@ -858,7 +869,8 @@ TBD
 >
 > - To read about versions `7.0.0` and before, please see the [legacy repo](https://github.com/helm/charts/tree/master/stable/airflow).
 
-[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.0.0...HEAD
+[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.1.0...HEAD
+[10.1.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.0.0...airflow-10.1.0
 [10.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-9.0.0...airflow-10.0.0
 [9.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-8.9.0...airflow-9.0.0
 [8.9.0]: https://github.com/airflow-helm/charts/compare/airflow-8.8.0...airflow-8.9.0

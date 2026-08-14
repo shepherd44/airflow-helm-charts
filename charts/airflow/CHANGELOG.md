@@ -6,7 +6,9 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ## [Unreleased]
 
-TBD
+### Added
+- an optional CronJob which runs `airflow db clean`, configured under `dbCleanup.*`. Disabled by default, because it permanently removes rows from the metadata database
+- `dbCleanup.dropArchivedAfterDays`, which drops the archive tables `db clean` leaves behind. Without it the database never actually shrinks -- `airflow db clean` archives by default, moving purged rows into `_airflow_deleted__<table>__<timestamp>` tables rather than deleting them
 
 ## [11.0.0] - 2026-08-14
 

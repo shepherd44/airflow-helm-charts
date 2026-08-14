@@ -1,0 +1,10 @@
+## this values file tests the `airflow db clean` CronJob, including the archive-drop
+## path (db clean archives by default, so without this the database never shrinks)
+##
+airflow:
+  jwtSecret: "ci-only-not-a-real-secret"
+dbCleanup:
+  enabled: true
+  retentionDays: 45
+  tables: ["log", "job", "xcom"]
+  dropArchivedAfterDays: 14

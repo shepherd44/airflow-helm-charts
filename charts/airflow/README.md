@@ -491,7 +491,7 @@ Parameter | Description | Default
 
 Parameter | Description | Default
 --- | --- | ---
-`postgresql.enabled` | if the `stable/postgresql` chart is used | `true`
+`postgresql.enabled` | if the embedded postgres database is deployed | `true`
 `postgresql.image.*` | configs for the postgres container image | `<see values.yaml>`
 `postgresql.postgresqlDatabase` | the postgres database to use | `airflow`
 `postgresql.postgresqlUsername` | the postgres user to create | `postgres`

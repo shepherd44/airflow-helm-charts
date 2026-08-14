@@ -2362,91 +2362,84 @@ pgbouncer:
 ## DATABASE | Embedded Postgres
 ###################################
 postgresql:
-  ## if the `stable/postgresql` chart is used
-  ## - [WARNING] the embedded Postgres is NOT SUITABLE for production deployments of Airflow
-  ## - [WARNING] consider using an external database with `externalDatabase.*`
+  ## if the embedded postgres database is deployed
+  ## - [WARNING] the embedded database is NOT SUITABLE for production deployments of airflow,
+  ##   it is a single replica with no backups, failover, or connection tuning
+  ## - [WARNING] airflow 3 requires PostgreSQL 14 or later, so the version below must not be
+  ##   lowered past that even if you pin a custom image
   ## - set to `false` if using `externalDatabase.*`
   ##
   enabled: true
 
   ## configs for the postgres container image
+  ## - [NOTE] this chart runs the OFFICIAL postgres image rather than a sub-chart, the
+  ##   `stable/postgresql` chart it used to depend on was archived and shipped postgres 11
   ##
   image:
-    registry: ghcr.io
-    repository: airflow-helm/postgresql-bitnami
-    tag: 11.22-patch.0
+    repository: postgres
+    tag: 17-trixie
     pullPolicy: IfNotPresent
+    pullSecret: ""
 
-  ## the postgres database to use
+  ## the postgres database, user, and password
+  ## - [WARNING] the default password is publicly known, change it or use `existingSecret`
   ##
   postgresqlDatabase: airflow
-
-  ## the postgres user to create
-  ##
   postgresqlUsername: postgres
-
-  ## the postgres user's password
-  ##
   postgresqlPassword: airflow
 
-  ## the name of a pre-created secret containing the postgres password
+  ## the name of an existing Secret containing the postgres password
+  ## - [PRODUCTION RECOMMENDED] use this instead of `postgresqlPassword`
   ##
   existingSecret: ""
-
-  ## the key within `postgresql.existingSecret` containing the password string
-  ##
   existingSecretKey: "postgresql-password"
 
-  ## configs for the PVC of postgresql
+  ## extra environment variables for the postgres container
+  ## - for example, to tune `POSTGRES_INITDB_ARGS`
+  ##
+  extraEnv: []
+
+  ## resource requests/limits for the postgres Pod
+  ##
+  resources: {}
+
+  ## the nodeSelector/affinity/tolerations/securityContext configs for the postgres Pod
+  ##
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+
+  ## how long to wait for the postgres Pod to shut down cleanly
+  ##
+  terminationPeriod: 60
+
+  ## if the postgres Pod may be evicted by the cluster-autoscaler
+  ## - [WARNING] leaving this `true` lets the autoscaler move your database
+  ##
+  safeToEvict: false
+
+  ## annotations/labels for the postgres Pod
+  ##
+  podAnnotations: {}
+  podLabels: {}
+
+  ## the priorityClassName for the postgres Pod
+  ##
+  priorityClassName: ""
+
+  ## configs for the postgres data volume
+  ## - [WARNING] with `enabled: false` the database is stored in an emptyDir and is LOST
+  ##   whenever the Pod is replaced
   ##
   persistence:
-    ## if postgres will use Persistent Volume Claims to store data
-    ## - [WARNING] if false, data will be LOST as postgres Pods restart
-    ##
     enabled: true
-
-    ## the name of the StorageClass used by the PVC
-    ##
     storageClass: ""
-
-    ## the access modes of the PVC
-    ##
     accessModes:
       - ReadWriteOnce
-
-    ## the size of PVC to request
-    ##
     size: 8Gi
 
-  ## configs for the postgres StatefulSet
-  ##
-  master:
-    ## the nodeSelector configs for the postgres Pods
-    ## - docs for nodeSelector:
-    ##   https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
-    ##
-    nodeSelector: {}
 
-    ## the affinity configs for the postgres Pods
-    ## - spec for Affinity:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core
-    ##
-    affinity: {}
-
-    ## the toleration configs for the postgres Pods
-    ## - spec for Toleration:
-    ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core
-    ##
-    tolerations: []
-
-    ## annotations for the postgres Pods
-    ##
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-
-###################################
-## DATABASE | External Database
-###################################
 externalDatabase:
   ## the type of external database
   ## - allowed values: "mysql", "postgres"

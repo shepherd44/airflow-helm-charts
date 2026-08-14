@@ -391,7 +391,7 @@ pgbouncer:
 ## DATABASE | Embedded Postgres
 ###################################
 postgresql:
-  ## if the `stable/postgresql` chart is used
+  ## if the embedded postgres database is deployed
   enabled: false
 
 ###################################

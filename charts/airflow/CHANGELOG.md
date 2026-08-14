@@ -8,6 +8,16 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [10.1.1] - 2026-08-14
+
+> 🟥 __IMPORTANT__ 🟥
+>
+> - fixes a crash-loop of the embedded celery broker which happens with any redis image whose `WORKDIR` is not `/data` (for example the `bitnamilegacy/redis` images that chart 9.0.0 defaulted to)
+
+### Fixed
+- the embedded celery broker now passes `--dir /data` explicitly, rather than relying on the container image's `WORKDIR`. Without it, redis wrote `dump.rdb` to its working directory; on images where that is `/` the write is denied, and because redis defaults to `stop-writes-on-bgsave-error yes` it then refuses writes entirely and the Pod is eventually killed and restarted
+- the embedded celery broker now passes `--save ""` when `redis.persistence.enabled` is `false`, so it does not fork for RDB snapshots that would be thrown away with the emptyDir anyway
+
 ## [10.1.0] - 2026-08-13
 
 > 🟨 __NOTES__ 🟨
@@ -869,7 +879,8 @@ TBD
 >
 > - To read about versions `7.0.0` and before, please see the [legacy repo](https://github.com/helm/charts/tree/master/stable/airflow).
 
-[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.1.0...HEAD
+[Unreleased]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.1.1...HEAD
+[10.1.1]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.1.0...airflow-10.1.1
 [10.1.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-10.0.0...airflow-10.1.0
 [10.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-9.0.0...airflow-10.0.0
 [9.0.0]: https://github.com/shepherd44/airflow-helm-charts/compare/airflow-8.9.0...airflow-9.0.0

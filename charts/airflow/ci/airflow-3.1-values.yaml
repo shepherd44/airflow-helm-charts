@@ -1,0 +1,30 @@
+## this values file tests Airflow 3.1.0 with the latest features and FAB
+## - API Server (replaces Webserver)
+## - DAG Processor (separate from Scheduler)
+## - JWT authentication (must be set explicitly, there is no auto-generated fallback)
+## - Latest 3.x features and improvements
+## - Run with FAB authentication
+##
+airflow:
+  image:
+    repository: ghcr.io/santosr2/airflow-fab
+    tag: 3.1.0-patch.0
+
+  config:
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.providers.fab.auth_manager.api.auth.backend.jwt,airflow.providers.fab.auth_manager.api.auth.backend.session,airflow.providers.fab.auth_manager.api.auth.backend.basic_auth"
+    AIRFLOW__CORE__AUTH_MANAGER: "airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager"
+
+  ## the chart refuses to render without a JWT secret
+  jwtSecret: "ci-only-not-a-real-secret"
+
+  ## minimal resources for CI
+  executors: [CeleryExecutor]
+
+## API Server configuration (Airflow 3.0+ component)
+apiServer:
+  ## minimal replicas for CI
+  replicas: 1
+
+## DAG Processor configuration (Airflow 2.3+ component, required for Airflow 3.0+)
+dagProcessor:
+  enabled: true

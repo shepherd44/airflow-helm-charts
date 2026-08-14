@@ -55,10 +55,10 @@ Originally created in 2017, it has since helped thousands of companies create pr
 
 ## Key Features
 
-- __Support for Airflow Versions:__ 
+- __Support for Airflow Versions:__
    - [`1.10` | `2.0` | `2.1` | `2.2` | `2.3` | `2.4` | `2.5` | `2.6` | `2.7` | `2.8` | `2.9` | `2.10`](#airflow-version-support)
 - __Support for Airflow Executors:__ 
-   - [`CeleryExecutor` | `KubernetesExecutor` | `CeleryKubernetesExecutor`](#airflow-executor-support)
+   - [`CeleryExecutor` | `KubernetesExecutor` | both at once](#airflow-executor-support)
 - __Easily Connect with your Database:__
    - [`Connect to Postgres`](https://github.com/airflow-helm/charts/tree/main/charts/airflow/docs/faq/database/external-database.md#option-1---postgres) |
      [`Configure PgBouncer`](https://github.com/airflow-helm/charts/tree/main/charts/airflow/docs/faq/database/pgbouncer.md) |
@@ -147,7 +147,7 @@ Here is a brief overview of the chart's development from 2017 until today:
 - __Custom Values Starting Points:__
   - [`CeleryExecutor`](sample-values-CeleryExecutor.yaml)
   - [`KubernetesExecutor`](sample-values-KubernetesExecutor.yaml)
-  - [`CeleryKubernetesExecutor`](sample-values-CeleryKubernetesExecutor.yaml)
+  - [`CeleryExecutor` + `KubernetesExecutor`](sample-values-MultipleExecutors.yaml)
 - __Real-World Examples:__
   - [`Minikube / Kind / K3D`](https://github.com/airflow-helm/charts/tree/main/charts/airflow/examples/minikube)
   - [`Google Kubernetes Engine (GKE)`](https://github.com/airflow-helm/charts/tree/main/charts/airflow/examples/google-gke)
@@ -158,38 +158,34 @@ Here is a brief overview of the chart's development from 2017 until today:
 
 The following table lists the __airflow versions__ supported by this chart (set the version with [`airflow.image.tag`](https://github.com/airflow-helm/charts/tree/main/charts/airflow/docs/faq/configuration/airflow-version.md) value).
 
-Chart Version → <br> Airflow Version ↓  | `7.0.0` - `7.16.0` | `8.0.0` - `8.5.3` | `8.6.0` | `8.6.1` - `8.7.0` | `8.7.1` | `8.8.0` | `8.9.0+`
---- | --- | --- | --- | --- | --- | --- | ---
-`1.10.X` | ✔️ | ✔️ <sub>[1]</sub> | ✔️️ <sub>[1]</sub> | ✔️️ <sub>[1]</sub> | ✔️️ <sub>[1]</sub> | ✔️️ <sub>[1]</sub> | ✔️️ <sub>[1]</sub>
-`2.0.X` | ❌ | ✔️ | ✔️ | ✔️ | ✔️️ | ✔️️ | ✔️️
-`2.1.X` | ❌ | ✔️ | ✔️ | ✔️ | ✔️️ | ✔️️ | ✔️️
-`2.2.X` | ❌ | ⚠️ <sub>[2]</sub> | ✔️️ | ✔️ | ✔️️ | ✔️️ | ✔️️
-`2.3.X` | ❌ | ❌ | ❌ | ✔️️ | ✔️️ | ✔️️ | ✔️️
-`2.4.X` | ❌ | ❌ | ❌ | ✔️️ | ✔️️ | ✔️️ | ✔️️
-`2.5.X` | ❌ | ❌ | ❌ | ✔️️ | ✔️️ | ✔️️ | ✔️️
-`2.6.X` | ❌ | ❌ | ❌ | ❌ | ✔️️ | ✔️️ | ✔️️
-`2.7.X` | ❌ | ❌ | ❌ | ❌ | ❌ | ✔️️ | ✔️️
-`2.8.X` | ❌ | ❌ | ❌ | ❌ | ❌ | ✔️️ | ✔️️
-`2.9.X` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌️ | ✔️️
-`2.10.X` | ❌ | ❌ | ❌ | ❌ | ❌ | ❌️ | ⚠️ <sub>[3]</sub>
+Chart Version → <br> Airflow Version ↓  | `10.X.X` and earlier | `11.X.X`
+--- | --- | ---
+`1.10.X` | ✔️ <sub>[1]</sub> | ❌
+`2.0.X` - `2.9.X` | ✔️ | ❌
+`2.10.X` | ⚠️ <sub>[2]</sub> | ❌
+`2.11.X` | ✔️ | ❌
+`3.0.X` - `3.3.X` | ❌ | ✔️
 
-<sub>[1] you must set `airflow.legacyCommands = true` when using airflow version `1.10.X`</sub>
+<sub>[1] chart `10.X.X` and earlier needed `airflow.legacyCommands = true` for airflow `1.10.X`; that value no longer exists</sub>
 <br>
-<sub>[2] the [Deferrable Operators & Triggers](https://airflow.apache.org/docs/apache-airflow/stable/concepts/deferring.html) feature won't work, as there is no `airflow triggerer` Deployment</sub>
-<br>
-<sub>[3] airflow version `2.10.1` has a [serious issue](https://github.com/apache/airflow/issues/42111) with git-sync, use `2.10.2` or later</sub>
+<sub>[2] airflow version `2.10.1` has a [serious issue](https://github.com/apache/airflow/issues/42111) with git-sync, use `2.10.2` or later</sub>
+
+__Chart `11.X.X` supports Apache Airflow 3 only.__ It deploys an `api-server` and a standalone
+`dag-processor` in place of the `webserver`, and refuses to render for any image tag below `3.0.0`.
+To run Airflow 2, stay on the `10.X.X` releases. See
+[docs/guides/airflow-3-migration.md](docs/guides/airflow-3-migration.md).
 
 ## Airflow Executor Support
 
-The following table lists the [__airflow executors__](https://airflow.apache.org/docs/apache-airflow/stable/executor/index.html) supported by this chart (set by `airflow.executor` value).
+The following table lists the [__airflow executors__](https://airflow.apache.org/docs/apache-airflow/stable/executor/index.html) supported by this chart (set by the `airflow.executors` list).
 
-Chart Version → <br> Airflow Executor ↓ | `7.X.X` | `8.X.X` | 
+Chart Version → <br> Airflow Executor ↓ | `10.X.X` and earlier | `11.X.X`
 --- | --- | ---
 `CeleryExecutor` | ✔️ | ✔️
-`KubernetesExecutor` | ⚠️️ <sub>[1]</sub> | ✔️
-`CeleryKubernetesExecutor` | ❌ | ✔️
+`KubernetesExecutor` | ✔️ | ✔️
+`CeleryKubernetesExecutor` | ✔️ | ❌ <sub>[1]</sub>
 
-<sub>[1] we encourage you to use chart version `8.X.X`, so you can use the `airflow.kubernetesPodTemplate.*` values (requires airflow `1.10.11+`) </sub>
+<sub>[1] `CeleryKubernetesExecutor` was removed in airflow 3. Its replacement is a two-element list: `airflow.executors: ["CeleryExecutor", "KubernetesExecutor"]`</sub>
 
 ## Helm Values
 
@@ -202,11 +198,12 @@ The following is a summary of the __helm values__ provided by this chart (see fu
 
 Parameter | Description | Default
 --- | --- | ---
-`airflow.legacyCommands` | if we use legacy 1.10 airflow commands | `false`
 `airflow.image.*` | configs for the airflow container image | `<see values.yaml>`
-`airflow.executor` | the airflow executor type to use | `CeleryExecutor`
+`airflow.executors` | the airflow executors to use, first is primary | `["CeleryExecutor"]`
 `airflow.fernetKey` | the fernet encryption key (sets `AIRFLOW__CORE__FERNET_KEY`) | `7T512UXSSmBOkpWimFHIVb8jK6lfmSAvx4mO6Arehnc=`
-`airflow.webserverSecretKey` | the secret_key for flask (sets `AIRFLOW__WEBSERVER__SECRET_KEY`) | `THIS IS UNSAFE!`
+`airflow.apiSecretKey` | the secret_key for the api-server (sets `AIRFLOW__API__SECRET_KEY`) | `THIS IS UNSAFE!`
+`airflow.jwtSecret` | signs Task Execution API tokens (sets `AIRFLOW__API_AUTH__JWT_SECRET`), REQUIRED | `""`
+`airflow.jwtSecretName` | an existing Secret holding the JWT key, used instead of `jwtSecret` | `""`
 `airflow.config` | environment variables for airflow configs | `{}`
 `airflow.users` | a list of users to create | `<see values.yaml>`
 `airflow.usersTemplates` | bash-like templates to be used in `airflow.users` | `<see values.yaml>`
@@ -494,7 +491,7 @@ Parameter | Description | Default
 
 Parameter | Description | Default
 --- | --- | ---
-`postgresql.enabled` | if the `stable/postgresql` chart is used | `true`
+`postgresql.enabled` | if the embedded postgres database is deployed | `true`
 `postgresql.image.*` | configs for the postgres container image | `<see values.yaml>`
 `postgresql.postgresqlDatabase` | the postgres database to use | `airflow`
 `postgresql.postgresqlUsername` | the postgres user to create | `postgres`

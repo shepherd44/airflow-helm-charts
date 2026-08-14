@@ -1,0 +1,148 @@
+{{- if .Values.postgresql.enabled }}
+{{- $podNodeSelector := include "airflow.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.postgresql.nodeSelector) }}
+{{- $podAffinity := include "airflow.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.postgresql.affinity) }}
+{{- $podTolerations := include "airflow.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.postgresql.tolerations) }}
+{{- /* NOTE: postgres deliberately does NOT fall back to `airflow.defaultSecurityContext`.
+       That default is `fsGroup: 0`, which is right for the airflow images (they run as
+       uid 50000 / gid 0) but wrong here: the official postgres image runs as uid 999 and
+       initdb fails on a PVC it cannot write to. Only an explicit
+       `postgresql.securityContext` overrides the value below. */}}
+{{- $podSecurityContext := .Values.postgresql.securityContext | default (dict "fsGroup" 999) | toYaml }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "airflow.postgresql.fullname" . }}
+  labels:
+    app: {{ include "airflow.labels.app" . }}
+    component: postgresql
+    chart: {{ include "airflow.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ include "airflow.postgresql.fullname" . }}
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ include "airflow.labels.app" . }}
+      component: postgresql
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if or .Values.airflow.podAnnotations .Values.postgresql.podAnnotations .Values.postgresql.safeToEvict }}
+      annotations:
+        {{- if .Values.airflow.podAnnotations }}
+        {{- toYaml .Values.airflow.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{- if .Values.postgresql.podAnnotations }}
+        {{- toYaml .Values.postgresql.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{- if .Values.postgresql.safeToEvict }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        {{- end }}
+      {{- end }}
+      labels:
+        app: {{ include "airflow.labels.app" . }}
+        component: postgresql
+        release: {{ .Release.Name }}
+        {{- if .Values.postgresql.podLabels }}
+        {{- toYaml .Values.postgresql.podLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      restartPolicy: Always
+      {{- if .Values.postgresql.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.postgresql.image.pullSecret }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.postgresql.terminationPeriod }}
+      {{- if $podNodeSelector }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $podAffinity }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+      {{- if $podTolerations }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- if .Values.postgresql.priorityClassName }}
+      priorityClassName: {{ .Values.postgresql.priorityClassName }}
+      {{- end }}
+      containers:
+        - name: postgresql
+          image: {{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.postgresqlDatabase | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.postgresqlUsername | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.postgresql.existingSecret }}
+                  name: {{ .Values.postgresql.existingSecret }}
+                  key: {{ .Values.postgresql.existingSecretKey }}
+                  {{- else }}
+                  name: {{ include "airflow.postgresql.fullname" . }}
+                  key: postgresql-password
+                  {{- end }}
+            {{- /* NOTE: PGDATA must be a SUBDIRECTORY of the mount, not the mount itself. A
+                   PVC root can carry `lost+found` or root-owned entries, and initdb refuses
+                   to run in a directory that is not empty and not already a data dir. */}}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            {{- if .Values.postgresql.extraEnv }}
+            {{- toYaml .Values.postgresql.extraEnv | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+          livenessProbe:
+            exec:
+              {{- /* NOTE: `-h 127.0.0.1` forces a TCP check rather than the unix socket, so
+                     this probes the same path airflow uses. `-U`/`-d` are passed explicitly
+                     so the check keeps naming the right database if the defaults change. */}}
+              command: ["sh", "-c", "exec pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "exec pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /var/lib/postgresql/data
+      {{- if not .Values.postgresql.persistence.enabled }}
+      volumes:
+        - name: postgresql-data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.postgresql.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgresql-data
+      spec:
+        accessModes:
+          {{- toYaml .Values.postgresql.persistence.accessModes | nindent 10 }}
+        {{- if .Values.postgresql.persistence.storageClass }}
+        storageClassName: {{ .Values.postgresql.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.persistence.size | quote }}
+  {{- end }}
+{{- end }}

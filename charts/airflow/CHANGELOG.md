@@ -8,6 +8,39 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [11.0.0] - 2026-08-14
+
+> 🟥 __IMPORTANT__ 🟥
+>
+> - this chart now supports __Apache Airflow 3 only__, and refuses to render for any image tag below `3.0.0`
+> - deployments still on Airflow 2 must stay on the `10.X.X` releases
+> - Airflow 2.x reached end-of-life on 2026-04-22
+
+### Added
+- Airflow 3 support: an `api-server` Deployment replaces the `webserver`, and a standalone `dag-processor` Deployment is now always deployed (it is mandatory in Airflow 3). Adapted from [`santosr2/airflow-community-chart`](https://github.com/santosr2/airflow-community-chart), which forked from the same upstream commit as this chart
+- `airflow.jwtSecret` / `airflow.jwtSecretName` / `airflow.jwtSecretKey`, for the key that signs Task Execution API tokens. One of the first two is __required__ — there is deliberately no auto-generated fallback, because a generated value changes on every render and would rotate the key on every GitOps sync
+- `airflow.executors`, a list, replacing the `airflow.executor` scalar. `["CeleryExecutor", "KubernetesExecutor"]` is the replacement for the removed `CeleryKubernetesExecutor`
+- `AIRFLOW__CORE__EXECUTION_API_SERVER_URL` is now set to the in-cluster api-server Service. Left unset, Airflow derives it from `[api] base_url`, which sends every worker's task-execution traffic out through the public ingress and back
+- the embedded postgres database is now defined by the chart itself, running the official `postgres` image, and defaults to __PostgreSQL 17__
+
+### Changed
+- the embedded postgres is no longer the `stable/postgresql` sub-chart. That repository is archived and the sub-chart shipped PostgreSQL 11.7, below the PostgreSQL 14 floor that Airflow 3 documents. This removes the chart's last dependency on `https://charts.helm.sh/stable`
+- `airflow.webserverSecretKey` → `airflow.apiSecretKey` (the option moved to `[api] secret_key` in Airflow 3)
+- `web.*` → `apiServer.*`, and `ingress.web.*` → `ingress.apiServer.*`
+- `dagProcessor.enabled` now defaults to `true`, and `apiServer.replicas` to `1`. Both previously defaulted to values that the chart's own validation rejected, so Airflow 3 could not be rendered with the defaults
+- `sync-users` imports `airflow.providers.fab.www.app`; `airflow.www` does not exist in Airflow 3. The image must install `apache-airflow-providers-fab`, which is no longer bundled with core
+
+### Removed
+- Airflow 1.10 support, including `airflow.legacyCommands` and a vendored copy of Airflow 2.1's alembic `check_migrations`. This had survived the 1.10 → 2.x migration unused
+- the `webserver` component and the `web.*` values
+- config keys that do not exist in Airflow 3 and were being emitted anyway: `AIRFLOW__CORE__SQL_ALCHEMY_CONN_CMD`, the four deprecated `AIRFLOW__KUBERNETES__*` aliases, and `AIRFLOW__LOGGING__DAG_PROCESSOR_LOG_LOCATION` (which has no counterpart at all — the real options are `dag_processor_log_target`, `dag_processor_log_format` and `dag_processor_child_process_log_directory`)
+
+### Fixed
+- the multi-executor conditional was inverted, so a two-executor list silently emitted only its first entry and tasks routed to the second executor would queue forever
+- the JWT signing key was injected into every workload, including celery workers and the KubernetesExecutor task-pod template — containers that run user DAG code. It is now injected into the api-server and scheduler main containers only, which is what Airflow's own configuration reference calls for
+- `jwtSecretKey` defaulted to an empty string, rendering an invalid `secretKeyRef` on the bring-your-own-Secret path that the documentation recommends
+- the dag-processor no longer ships a Service and ServiceMonitor; it serves no HTTP, so those were a permanently failing scrape target
+
 ## [10.1.1] - 2026-08-14
 
 > 🟥 __IMPORTANT__ 🟥

@@ -1,5 +1,8 @@
 ## this values file tests the git-sync sidecar
 ##
+airflow:
+  jwtSecret: "ci-only-not-a-real-secret"
+
 dags:
   gitSync:
     enabled: true

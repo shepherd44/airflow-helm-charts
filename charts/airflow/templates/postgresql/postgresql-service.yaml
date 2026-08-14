@@ -1,0 +1,24 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "airflow.postgresql.fullname" . }}
+  labels:
+    app: {{ include "airflow.labels.app" . }}
+    component: postgresql
+    chart: {{ include "airflow.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "airflow.labels.app" . }}
+    component: postgresql
+    release: {{ .Release.Name }}
+  ports:
+    - name: postgresql
+      ## NOTE: postgres should be treated as opaque TCP (only important for Istio users)
+      appProtocol: tcp
+      protocol: TCP
+      port: 5432
+{{- end }}

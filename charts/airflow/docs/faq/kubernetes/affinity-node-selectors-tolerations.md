@@ -104,7 +104,7 @@ scheduler:
   tolerations: []
   topologySpreadConstraints: []
 
-## airflow webserver
+## airflow api-server
 web:
   nodeSelector: {}
   affinity: {}

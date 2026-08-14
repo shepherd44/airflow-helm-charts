@@ -16,14 +16,11 @@ The python sync script for users.
 #############
 import sys
 from werkzeug.security import check_password_hash, generate_password_hash
-{{- if .Values.airflow.legacyCommands }}
-import airflow.www_rbac.app as www_app
-flask_app, flask_appbuilder = www_app.create_app()
-{{- else }}
-import airflow.www.app as www_app
-flask_app = www_app.create_app()
+{{- /* NOTE: `airflow.www` does not exist in airflow 3 -- the FAB web app moved into the
+       `apache-airflow-providers-fab` package, which must be installed in the image. */}}
+import airflow.providers.fab.www.app as www_app
+flask_app = www_app.create_app(enable_plugins=True)
 flask_appbuilder = flask_app.appbuilder
-{{- end }}
 
 # we want type hints, but airflow keeps moving the `User` and `Role` models around
 #                                  (╯°□°)╯︵ ┻━┻
@@ -206,8 +203,15 @@ def sync_all_users(user_wrappers: Dict[str, UserWrapper]) -> None:
     Sync all users in provided `user_wrappers`.
     """
     logging.info("BEGIN: airflow users sync")
+{{- if semverCompare ">= 3.0.0" (include "airflow.version" .) }}
+    # Airflow 3.0+ requires Flask application context for FAB provider operations
+    with flask_app.app_context():
+        for user_wrapper in user_wrappers.values():
+            sync_user(user_wrapper)
+{{- else }}
     for user_wrapper in user_wrappers.values():
         sync_user(user_wrapper)
+{{- end }}
     logging.info("END: airflow users sync")
 
     # ensures than any SQLAlchemy sessions are closed (so we don't hold a connection to the database)

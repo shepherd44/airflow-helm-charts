@@ -53,7 +53,7 @@ We recommend that you start your `custom-values.yaml` file from one of our sampl
 
 - [`CeleryExecutor`](../../sample-values-CeleryExecutor.yaml)
 - [`KubernetesExecutor`](../../sample-values-KubernetesExecutor.yaml)
-- [`CeleryKubernetesExecutor`](../../sample-values-CeleryKubernetesExecutor.yaml)
+- [`CeleryExecutor` + `KubernetesExecutor`](../../sample-values-MultipleExecutors.yaml)
 
 > 🟦 __Tip__ 🟦
 > 
@@ -105,7 +105,7 @@ helm install \
 ## Step 5 - Access the Airflow UI
 
 ```shell
-## port-forward the airflow webserver
+## port-forward the airflow api-server
 kubectl port-forward svc/${AIRFLOW_NAME}-web 8080:8080 --namespace $AIRFLOW_NAMESPACE
 
 ## open your browser to: http://localhost:8080 

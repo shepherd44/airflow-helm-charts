@@ -15,7 +15,11 @@ For example, assuming you have an Ingress Controller with an IngressClass named 
 ```yaml
 airflow:
   config: 
-    AIRFLOW__WEBSERVER__BASE_URL: "http://example.com/airflow/"
+    # For Airflow v2
+    AIRFLOW__WEBSERVER__BASE_URL: "http://airflow.example.com"
+    # For Airflow v3
+    AIRFLOW__API__BASE_URL: "http://example.com/airflow/"
+
     AIRFLOW__CELERY__FLOWER_URL_PREFIX: "/airflow/flower"
 
 ingress:
@@ -24,7 +28,7 @@ ingress:
   ## WARNING: set as "networking.k8s.io/v1beta1" for Kubernetes 1.18 and earlier
   apiVersion: networking.k8s.io/v1
   
-  ## airflow webserver ingress configs
+  ## airflow api-server ingress configs
   web:
     annotations: {}
     host: "example.com"

@@ -8,14 +8,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{/*
 The version of airflow being deployed.
-- extracted from the image tag (only for images in airflow's official DockerHub repo)
+- extracted from the image tag
 - always in `XX.XX.XX` format (ignores any pre-release suffixes)
 - empty if no version can be extracted
 */}}
-{{- define "airflow.image.version" -}}
-{{- if eq .Values.airflow.image.repository "apache/airflow" -}}
-{{- regexFind `^[0-9]+\.[0-9]+\.[0-9]+` .Values.airflow.image.tag -}}
-{{- end -}}
+{{- define "airflow.version" -}}
+{{- regexFind `^[0-9]+\.[0-9]+\.[0-9]+` (.Values.airflow.image.tag | toString) -}}
 {{- end -}}
 
 {{/*
@@ -47,7 +45,7 @@ Construct the name of the airflow ServiceAccount.
 A flag indicating if a celery-like executor is selected (empty if false)
 */}}
 {{- define "airflow.executor.celery_like" -}}
-{{- if or (eq .Values.airflow.executor "CeleryExecutor") (eq .Values.airflow.executor "CeleryKubernetesExecutor") -}}
+{{- if has "CeleryExecutor" .Values.airflow.executors -}}
 true
 {{- end -}}
 {{- end -}}
@@ -56,17 +54,17 @@ true
 A flag indicating if a kubernetes-like executor is selected (empty if false)
 */}}
 {{- define "airflow.executor.kubernetes_like" -}}
-{{- if or (eq .Values.airflow.executor "KubernetesExecutor") (eq .Values.airflow.executor "CeleryKubernetesExecutor") -}}
+{{- if has "KubernetesExecutor" .Values.airflow.executors -}}
 true
 {{- end -}}
 {{- end -}}
 
 {{/*
-The scheme (HTTP, HTTPS) used by the webserver.
-NOTE: this is used in the liveness/readiness probes of the webserver
+The scheme (HTTP, HTTPS) used by the API server.
+NOTE: this is used in the liveness/readiness probes of the API server
 */}}
-{{- define "airflow.web.scheme" -}}
-{{- if and (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_CERT) (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_KEY) -}}
+{{- define "airflow.apiServer.scheme" -}}
+{{- if and (.Values.airflow.config.AIRFLOW__API__SSL_CERT) (.Values.airflow.config.AIRFLOW__API__SSL_KEY) -}}
 HTTPS
 {{- else -}}
 HTTP
@@ -74,11 +72,11 @@ HTTP
 {{- end -}}
 
 {{/*
-The app protocol used by the webserver.
+The app protocol used by the API server.
 NOTE: this sets the `appProtocol` of the Service port (only important for Istio users)
 */}}
-{{- define "airflow.web.appProtocol" -}}
-{{- if and (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_CERT) (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_KEY) -}}
+{{- define "airflow.apiServer.appProtocol" -}}
+{{- if and (.Values.airflow.config.AIRFLOW__API__SSL_CERT) (.Values.airflow.config.AIRFLOW__API__SSL_KEY) -}}
 https
 {{- else -}}
 http
@@ -167,15 +165,7 @@ If the airflow triggerer should be used.
 */}}
 {{- define "airflow.triggerer.should_use" -}}
 {{- if .Values.triggerer.enabled -}}
-{{- if not .Values.airflow.legacyCommands -}}
-{{- if include "airflow.image.version" . -}}
-{{- if semverCompare ">=2.2.0" (include "airflow.image.version" .) -}}
 true
-{{- end -}}
-{{- else -}}
-true
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -191,20 +181,10 @@ true
 {{- end -}}
 
 {{/*
-Construct the `postgresql.fullname` of the postgresql sub-chat chart.
-Used to discover the Service and Secret name created by the sub-chart.
+Construct the name of the embedded postgresql resources.
 */}}
 {{- define "airflow.postgresql.fullname" -}}
-{{- if .Values.postgresql.fullnameOverride -}}
-{{- .Values.postgresql.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default "postgresql" .Values.postgresql.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
+{{- printf "%s-postgresql" (include "airflow.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -212,4 +192,71 @@ Construct the name of the embedded redis resources (StatefulSet, Service, Secret
 */}}
 {{- define "airflow.redis.fullname" -}}
 {{- printf "%s-redis" (include "airflow.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Check if FAB (Flask AppBuilder) auth manager is being used.
+Returns "true" if FAB is being used, empty otherwise.
+*/}}
+{{- define "airflow.auth.isFAB" -}}
+{{- if semverCompare "<3.0.0" (include "airflow.version" .) -}}
+{{- /* Airflow < 3.0 uses FAB by default */ -}}
+true
+{{- else -}}
+{{- /* Airflow >= 3.0: check if auth_manager is explicitly set to FAB */ -}}
+{{- $authManager := .Values.airflow.config.AIRFLOW__CORE__AUTH_MANAGER | default "" | lower -}}
+{{- if contains "fab" $authManager -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Map FAB role names to SimpleAuthManager role names.
+SimpleAuthManager only supports: admin, op, user, viewer
+*/}}
+{{- define "airflow.simpleAuthManager.mapRole" -}}
+{{- $role := . | lower -}}
+{{- if eq $role "admin" -}}
+admin
+{{- else if eq $role "op" -}}
+op
+{{- else if eq $role "user" -}}
+user
+{{- else if or (eq $role "viewer") (eq $role "public") -}}
+viewer
+{{- else -}}
+{{- /* Default to user for unknown roles */ -}}
+user
+{{- end -}}
+{{- end -}}
+
+{{/*
+Generate SimpleAuthManager users configuration string from airflow.users values.
+Format: "username:role,username:role"
+Example: "admin:admin,viewer:viewer"
+*/}}
+{{- define "airflow.simpleAuthManager.usersConfig" -}}
+{{- $users := list -}}
+{{- range .Values.airflow.users -}}
+  {{- $username := required "each `username` in `airflow.users` must be non-empty!" .username -}}
+  {{- /* Handle both string and list role formats */ -}}
+  {{- $firstRole := "" -}}
+  {{- if kindIs "string" .role -}}
+    {{- $firstRole = required "each string-type `role` in `airflow.users` must be non-empty!" .role -}}
+  {{- else if kindIs "slice" .role -}}
+    {{- if eq (len .role) 0 -}}
+      {{- fail "each list-type `role` in `airflow.users` must contain at least one element!" -}}
+    {{- end -}}
+    {{- $firstRole = index .role 0 -}}
+  {{- else -}}
+    {{- fail (printf "each `role` in `airflow.users` must be string-type or list-type, but got '%s'!" (kindOf .role)) -}}
+  {{- end -}}
+  {{- /* Map FAB role to SimpleAuthManager role */ -}}
+  {{- $mappedRole := include "airflow.simpleAuthManager.mapRole" $firstRole -}}
+  {{- /* Build user entry: username:role */ -}}
+  {{- $userEntry := printf "%s:%s" $username $mappedRole -}}
+  {{- $users = append $users $userEntry -}}
+{{- end -}}
+{{- join "," $users -}}
 {{- end -}}

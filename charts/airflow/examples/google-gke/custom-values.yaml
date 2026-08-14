@@ -2,17 +2,14 @@
 ## CONFIG | Airflow Configs
 ########################################
 airflow:
-  ## if we use legacy 1.10 airflow commands
-  legacyCommands: false
-
   ## configs for the airflow container image
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: apache/airflow
-    tag: 2.8.4-python3.9
+    tag: 3.3.1-python3.12
 
-  ## the airflow executor type to use
-  executor: CeleryExecutor
+  ## the airflow executors to use (the first is the primary)
+  executors: ["CeleryExecutor"]
 
   ## the fernet encryption key
   ## [NOTE] we have set `AIRFLOW__CORE__FERNET_KEY` from a Secret using `airflow.extraEnv`
@@ -20,7 +17,10 @@ airflow:
 
   ## the secret_key for flask
   ## [NOTE] we have set `AIRFLOW__WEBSERVER__SECRET_KEY` from a Secret using `airflow.extraEnv`
-  webserverSecretKey: ""
+  apiSecretKey: "THIS IS UNSAFE!"
+
+  ## REQUIRED on airflow 3: signs the Task Execution API tokens
+  jwtSecret: "THIS IS UNSAFE!"
 
   ## environment variables for airflow configs
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md
@@ -391,7 +391,7 @@ pgbouncer:
 ## DATABASE | Embedded Postgres
 ###################################
 postgresql:
-  ## if the `stable/postgresql` chart is used
+  ## if the embedded postgres database is deployed
   enabled: false
 
 ###################################

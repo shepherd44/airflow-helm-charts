@@ -25,14 +25,13 @@ airflow:
 
 > 🟥 __Warning__ 🟥
 >
-> To use an `airflow.image.tag` with Airflow `1.10+`, you must set `airflow.legacyCommands` to `true`.
+> This chart supports Apache Airflow 3.0.0 and above only. To run Airflow 2, use the `10.X.X` releases of this chart.
 
 For example, to use airflow `1.10.15`, with python `3.8`:
 
 ```yaml
 airflow:
   # WARNING: this must be "true" for airflow 1.10
-  legacyCommands: true
   
   image:
     repository: apache/airflow
@@ -48,7 +47,6 @@ For example, after building and tagging your Dockerfile as `MY_REPO:MY_TAG`, you
 ```yaml
 airflow:
   # WARNING: this must be "true" for airflow 1.10
-  #legacyCommands: true
   
   image:
     repository: MY_REPO

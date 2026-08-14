@@ -45,14 +45,8 @@ Construct the name of the airflow ServiceAccount.
 A flag indicating if a celery-like executor is selected (empty if false)
 */}}
 {{- define "airflow.executor.celery_like" -}}
-{{- if semverCompare "< 3.0.0" (include "airflow.version" .) -}}
-{{- if or (eq .Values.airflow.executor "CeleryExecutor") (eq .Values.airflow.executor "CeleryKubernetesExecutor") -}}
-true
-{{- end -}}
-{{- else -}}
 {{- if has "CeleryExecutor" .Values.airflow.executors -}}
 true
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -60,38 +54,8 @@ true
 A flag indicating if a kubernetes-like executor is selected (empty if false)
 */}}
 {{- define "airflow.executor.kubernetes_like" -}}
-{{- if semverCompare "< 3.0.0" (include "airflow.version" .) -}}
-{{- if or (eq .Values.airflow.executor "KubernetesExecutor") (eq .Values.airflow.executor "CeleryKubernetesExecutor") -}}
-true
-{{- end -}}
-{{- else -}}
 {{- if has "KubernetesExecutor" .Values.airflow.executors -}}
 true
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-The scheme (HTTP, HTTPS) used by the webserver.
-NOTE: this is used in the liveness/readiness probes of the webserver
-*/}}
-{{- define "airflow.web.scheme" -}}
-{{- if and (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_CERT) (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_KEY) -}}
-HTTPS
-{{- else -}}
-HTTP
-{{- end -}}
-{{- end -}}
-
-{{/*
-The app protocol used by the webserver.
-NOTE: this sets the `appProtocol` of the Service port (only important for Istio users)
-*/}}
-{{- define "airflow.web.appProtocol" -}}
-{{- if and (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_CERT) (.Values.airflow.config.AIRFLOW__WEBSERVER__WEB_SERVER_SSL_KEY) -}}
-https
-{{- else -}}
-http
 {{- end -}}
 {{- end -}}
 
@@ -201,15 +165,7 @@ If the airflow triggerer should be used.
 */}}
 {{- define "airflow.triggerer.should_use" -}}
 {{- if .Values.triggerer.enabled -}}
-{{- if not .Values.airflow.legacyCommands -}}
-{{- if include "airflow.version" . -}}
-{{- if semverCompare ">=2.2.0" (include "airflow.version" .) -}}
 true
-{{- end -}}
-{{- else -}}
-true
-{{- end -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 

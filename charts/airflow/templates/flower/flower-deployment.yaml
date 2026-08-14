@@ -121,11 +121,7 @@ spec:
           args:
             - "bash"
             - "-c"
-            {{- if .Values.airflow.legacyCommands }}
-            - "exec airflow flower"
-            {{- else }}
             - "exec airflow celery flower"
-            {{- end }}
           {{- if .Values.flower.readinessProbe.enabled }}
           readinessProbe:
             initialDelaySeconds: {{ .Values.flower.readinessProbe.initialDelaySeconds }}

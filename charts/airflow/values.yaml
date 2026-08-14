@@ -2,44 +2,30 @@
 ## CONFIG | Airflow Configs
 ########################################
 airflow:
-  ## if we use legacy 1.10 airflow commands
-  ##
-  legacyCommands: false
-
   ## configs for the airflow container image
   ##
   image:
     repository: apache/airflow
-    ## Airflow version (Used to make version-specific decisions in chart templates)
-    ## - This value determines which components are deployed:
-    ##   * Airflow < 3.0: Deploys Webserver
-    ##   * Airflow >= 3.0: Deploys API Server + DAG Processor (Webserver is replaced)
-    ## - For Airflow 3.0+, you must also set `jwtSecret` (see below)
-    ## - Supported versions: 1.10.x, 2.x, 3.0.x, 3.1.x
+    ## - the tag must START with a semver, the chart reads the airflow version from it
+    ##   (for example `3.3.1` or `3.3.1-python3.12-mybuild`)
+    ## - this chart supports airflow 3.0.0 and above only, for airflow 2 use chart 10.X.X
+    ## - you must also set `jwtSecret` or `jwtSecretName` (see below)
     ##
-    tag: "2.8.4-python3.9"
+    tag: "3.3.1-python3.12"
     pullPolicy: IfNotPresent
     pullSecret: ""
     uid: 50000
     gid: 0
 
-  ## the airflow executor type to use (Airflow < 3.0)
-  ## - allowed values: "CeleryExecutor", "KubernetesExecutor", "CeleryKubernetesExecutor"
-  ## - customize the "KubernetesExecutor" pod-template with `airflow.kubernetesPodTemplate.*`
-  ## - NOTE: For Airflow 3.0+, use `executors` (list) instead
-  ##
-  executor: CeleryExecutor
-
-  ## Airflow v2.10.0+ supports multiple executors, defined as a list (STABLE in 3.0+)
-  ## - In Airflow 3.0+, this field is REQUIRED and `executor` (singular) is deprecated
-  ## - CeleryKubernetesExecutor is DEPRECATED in Airflow 3.0+
-  ##   Replace with: executors: ["CeleryExecutor", "KubernetesExecutor"]
+  ## the airflow executors to use (REQUIRED)
   ## - allowed values: "CeleryExecutor", "KubernetesExecutor"
+  ## - the first executor in the list is the "primary" (default) executor
+  ## - `CeleryKubernetesExecutor` was REMOVED in airflow 3, its replacement is the
+  ##   two-element list: executors: ["CeleryExecutor", "KubernetesExecutor"]
   ## - customize the "KubernetesExecutor" pod-template with `airflow.kubernetesPodTemplate.*`
-  ## - Note: the first executor in the list is the "primary" executor (the default executor)
   ## - See: https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/executor/
   ##
-  executors: []
+  executors: ["CeleryExecutor"]
 
   ########################################
   ## Fernet Encryption Key
@@ -66,32 +52,6 @@ airflow:
   ## Documentation: charts/airflow/docs/faq/security/set-fernet-key.md
   ##
   fernetKey: "7T512UXSSmBOkpWimFHIVb8jK6lfmSAvx4mO6Arehnc="
-
-  ########################################
-  ## Webserver Secret Key
-  ## >>> CRITICAL SECURITY SETTING <<<
-  ########################################
-  ## the secret_key for flask (sets `AIRFLOW__WEBSERVER__SECRET_KEY`) used by Airflow < 3.0
-  ## - Used for Flask session signing and CSRF protection
-  ## - [CRITICAL] The default value below is PUBLICLY KNOWN and MUST be changed for ANY deployment
-  ## - [DANGER] Using the default enables session hijacking and unauthorized access
-  ## - [PRODUCTION] For production, use external secret manager (AWS Secrets Manager, Vault, etc.)
-  ##
-  ## Generate a new secret key:
-  ##   python -c "import secrets; print(secrets.token_urlsafe(32))"
-  ##
-  ## Alternative: Set via environment variable from external secret:
-  ##   airflow:
-  ##     extraEnv:
-  ##       - name: AIRFLOW__WEBSERVER__SECRET_KEY
-  ##         valueFrom:
-  ##           secretKeyRef:
-  ##             name: airflow-secrets
-  ##             key: webserver-secret-key
-  ##
-  ## Documentation: charts/airflow/docs/faq/security/set-webserver-secret-key.md
-  ##
-  webserverSecretKey: "THIS IS UNSAFE!"
 
   ########################################
   ## API Secret Key
@@ -905,10 +865,7 @@ scheduler:
   ##
   extraVolumes: []
 
-###################################
-## COMPONENT | Airflow Webserver
-###################################
-web:
+apiServer:
   ########################################
   ## FILE | webserver_config.py
   ########################################
@@ -940,8 +897,9 @@ web:
     ##
     existingSecret: ""
 
-  ## the number of web Pods to run
-  ## - if you set this >1 we recommend defining a `web.podDisruptionBudget`
+  ## the number of api-server Pods to run
+  ## - if you set this >1 we recommend defining a `apiServer.podDisruptionBudget`
+  ## - [NOTE] must be >=1 on airflow 3.0+, the api-server replaces the webserver there
   ##
   replicas: 1
 
@@ -1085,189 +1043,12 @@ web:
   ##
   extraVolumes: []
 
-apiServer:
-  ########################################
-  ## FILE | webserver_config.py
-  ########################################
-  ##
-  webserverConfig:
-    ## if the `webserver_config.py` file is mounted
-    ## - set to false if you wish to mount your own `webserver_config.py` file
-    ##
-    enabled: true
-
-    ## the full content of the `webserver_config.py` file (as a string)
-    ## - docs for Flask-AppBuilder security configs:
-    ##   https://flask-appbuilder.readthedocs.io/en/latest/security.html
-    ##
-    ## ____ EXAMPLE _______________
-    ##   stringOverride: |
-    ##     from airflow import configuration as conf
-    ##     from flask_appbuilder.security.manager import AUTH_DB
-    ##
-    ##     # the SQLAlchemy connection string
-    ##     SQLALCHEMY_DATABASE_URI = conf.get('core', 'SQL_ALCHEMY_CONN')
-    ##
-    ##     # use embedded DB for auth
-    ##     AUTH_TYPE = AUTH_DB
-    ##
-    stringOverride: ""
-
-    ## the name of a Secret containing a `webserver_config.py` key
-    ##
-    existingSecret: ""
-
-  ## the number of web Pods to run
-  ## - if you set this >1 we recommend defining a `web.podDisruptionBudget`
-  ##
-  replicas: 0
-
-  ## resource requests/limits for the web Pod
-  ## - spec for ResourceRequirements:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#resourcerequirements-v1-core
-  ##
-  resources: {}
-
-  ## the nodeSelector configs for the web Pods
-  ## - docs for nodeSelector:
-  ##   https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
-  ##
-  nodeSelector: {}
-
-  ## the affinity configs for the web Pods
-  ## - spec for Affinity:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#affinity-v1-core
-  ##
-  affinity: {}
-
-  ## the toleration configs for the web Pods
-  ## - spec for Toleration:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#toleration-v1-core
-  ##
-  tolerations: []
-
-  ## the topologySpreadConstraints configs for the web Pods
-  ## - docs for topologySpreadConstraints:
-  ##   https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-  ##
-  topologySpreadConstraints: []
-
-  ## the security context for the web Pods
-  ## - spec for PodSecurityContext:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#podsecuritycontext-v1-core
-  ##
-  securityContext: {}
-
-  ## labels for the web Deployment
-  ##
-  labels: {}
-
-  ## Pod labels for the web Deployment
-  ##
-  podLabels: {}
-
-  ## annotations for the web Deployment
-  ##
-  annotations: {}
-
-  ## Pod annotations for the web Deployment
-  ##
-  podAnnotations: {}
-
-  ## if we add the annotation: "cluster-autoscaler.kubernetes.io/safe-to-evict" = "true"
-  ##
-  safeToEvict: true
-
-  ## configs for the PodDisruptionBudget of the web Deployment
-  ##
-  podDisruptionBudget:
-    ## if a PodDisruptionBudget resource is created for the web Deployment
-    ##
-    enabled: false
-
-    ## the `apiVersion` to use for PodDisruptionBudget resources
-    ## - for Kubernetes 1.21 and later: "policy/v1"
-    ## - for Kubernetes 1.20 and before: "policy/v1beta1"
-    ##
-    apiVersion: policy/v1
-
-    ## the maximum unavailable pods/percentage for the web Deployment
-    ##
-    maxUnavailable: ""
-
-    ## the minimum available pods/percentage for the web Deployment
-    ##
-    minAvailable: ""
-
-  ## configs for the Service of the web Pods
-  ##
-  service:
-    annotations: {}
-    sessionAffinity: "None"
-    sessionAffinityConfig: {}
-    type: ClusterIP
-    externalPort: 8080
-    loadBalancerIP: ""
-    loadBalancerSourceRanges: []
-    nodePort:
-      http: ""
-
-  ## configs for the web Pods' readiness probe
-  ##
-  readinessProbe:
-    enabled: true
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-
-  ## configs for the web Pods' liveness probe
-  ##
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-
-  ## extra pip packages to install in the web Pods
-  ##
-  ## ____ EXAMPLE _______________
-  ##   extraPipPackages:
-  ##     - "SomeProject==1.0.0"
-  ##
-  extraPipPackages: []
-
-  ## extra containers for the web Pods
-  ## - spec for Container:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#container-v1-core
-  ##
-  extraContainers: []
-
-  ## extra init-containers for the web Pods
-  ## - spec of Container:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#container-v1-core
-  ##
-  extraInitContainers: []
-
-  ## extra VolumeMounts for the web Pods
-  ## - spec for VolumeMount:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volumemount-v1-core
-  ##
-  extraVolumeMounts: []
-
-  ## extra Volumes for the web Pods
-  ## - spec for Volume:
-  ##   https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.29/#volume-v1-core
-  ##
-  extraVolumes: []
-
 dagProcessor:
   ## if the dag-processor Deployment is created
-  ## Since Airflow 2.3.0 Dag Processor can run as standlone Deployment
-  ## [WARNING] Airflow 3.X Dag Processor is mandatory
+  ## - [WARNING] the standalone dag-processor is MANDATORY in airflow 3, disabling it
+  ##   means DAGs are never parsed -- the chart refuses to render if you turn this off
   ##
-  enabled: false
+  enabled: true
 
   ## the number of dagProcessor Pods to run
   ## - if you set this >1 we recommend defining a `web.podDisruptionBudget`
@@ -1619,7 +1400,6 @@ workers:
 triggerer:
   ## if the airflow triggerer should be deployed
   ## - [WARNING] the triggerer component was added in airflow 2.2.0
-  ## - [WARNING] if `airflow.legacyCommands` is `true` the triggerer will NOT be deployed
   ##
   enabled: true
 

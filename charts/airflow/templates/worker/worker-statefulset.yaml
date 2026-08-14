@@ -208,11 +208,7 @@ spec:
           args:
             - "bash"
             - "-c"
-            {{- if .Values.airflow.legacyCommands }}
-            - "exec airflow worker"
-            {{- else }}
             - "exec airflow celery worker"
-            {{- end }}
           {{- if $volumeMounts }}
           volumeMounts:
             {{- $volumeMounts | indent 12 }}

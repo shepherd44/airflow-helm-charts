@@ -18,10 +18,7 @@ Define the command/entrypoint configs for airflow containers
 {{- define "airflow.command" }}
 - "/usr/bin/dumb-init"
 - "--"
-{{- /* only use `/entrypoint` for airflow 2.0+ (older images dont pass "bash" & "python") */ -}}
-{{- if not .Values.airflow.legacyCommands }}
 - "/entrypoint"
-{{- end }}
 {{- end }}
 
 {{/*
@@ -82,11 +79,7 @@ EXAMPLE USAGE: {{ include "airflow.init_container.check_db" (dict "Release" .Rel
   args:
     - "bash"
     - "-c"
-    {{- if .Values.airflow.legacyCommands }}
-    - "exec timeout 60s airflow checkdb"
-    {{- else }}
     - "exec timeout 60s airflow db check"
-    {{- end }}
   {{- if .volumeMounts }}
   volumeMounts:
     {{- .volumeMounts | indent 4 }}
@@ -109,63 +102,9 @@ EXAMPLE USAGE: {{ include "airflow.init_container.wait_for_db_migrations" (dict 
   command:
     {{- include "airflow.command" . | indent 4 }}
   args:
-    {{- if .Values.airflow.legacyCommands }}
-    - "python"
-    - "-c"
-    - |
-      import logging
-      import os
-      import time
-
-      import airflow
-      from airflow import settings
-
-      # modified from https://github.com/apache/airflow/blob/2.1.0/airflow/utils/db.py#L583-L592
-      def _get_alembic_config():
-          from alembic.config import Config
-
-          package_dir = os.path.abspath(os.path.dirname(airflow.__file__))
-          directory = os.path.join(package_dir, 'migrations')
-          config = Config(os.path.join(package_dir, 'alembic.ini'))
-          config.set_main_option('script_location', directory.replace('%', '%%'))
-          config.set_main_option('sqlalchemy.url', settings.SQL_ALCHEMY_CONN.replace('%', '%%'))
-          return config
-
-      # copied from https://github.com/apache/airflow/blob/2.1.0/airflow/utils/db.py#L595-L622
-      def check_migrations(timeout):
-          """
-          Function to wait for all airflow migrations to complete.
-          :param timeout: Timeout for the migration in seconds
-          :return: None
-          """
-          from alembic.runtime.migration import MigrationContext
-          from alembic.script import ScriptDirectory
-
-          config = _get_alembic_config()
-          script_ = ScriptDirectory.from_config(config)
-          with settings.engine.connect() as connection:
-              context = MigrationContext.configure(connection)
-              ticker = 0
-              while True:
-                  source_heads = set(script_.get_heads())
-                  db_heads = set(context.get_current_heads())
-                  if source_heads == db_heads:
-                      break
-                  if ticker >= timeout:
-                      raise TimeoutError(
-                          f"There are still unapplied migrations after {ticker} seconds. "
-                          f"Migration Head(s) in DB: {db_heads} | Migration Head(s) in Source Code: {source_heads}"
-                      )
-                  ticker += 1
-                  time.sleep(1)
-                  logging.info('Waiting for migrations... %s second(s)', ticker)
-
-      check_migrations(60)
-    {{- else }}
     - "bash"
     - "-c"
     - "exec airflow db check-migrations -t 60"
-    {{- end }}
   {{- if .volumeMounts }}
   volumeMounts:
     {{- .volumeMounts | indent 4 }}
@@ -530,25 +469,45 @@ The list of `envFrom` for web/scheduler/worker/flower Pods
 {{- end }}
 
 {{/*
+The `env` carrying the Airflow 3 JWT signing key.
+
+This is deliberately NOT part of `airflow.env`. The JWT secret signs the tokens
+used by the Task Execution API, and only components that GENERATE or VALIDATE
+those tokens need it -- the scheduler (which mints a token per task) and the API
+server (which mints and validates). Workers, the triggerer and the DAG processor
+are handed an already-issued token at runtime and never sign anything, so giving
+them the signing key buys nothing and costs a privilege-escalation path: our
+celery workers and every KubernetesExecutor task pod run user DAG code pulled
+from git, and the signing key mints a token for ANY identity, including the
+scheduler's.
+
+Airflow's own config reference says the same thing:
+  "This key must be consistent across all components that generate or validate
+   JWT tokens (Scheduler, API Server). ... restrict it to only the components
+   that need it."
+
+Include this ONLY in the api-server and scheduler main containers.
+*/}}
+{{- define "airflow.env.jwt" }}
+{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
+- name: AIRFLOW__API_AUTH__JWT_SECRET
+  valueFrom:
+    secretKeyRef:
+      {{- if .Values.airflow.jwtSecretName }}
+      name: {{ .Values.airflow.jwtSecretName }}
+      key: {{ .Values.airflow.jwtSecretKey | default "value" }}
+      {{- else }}
+      name: {{ printf "%s-jwt-secret" (include "airflow.fullname" .) }}
+      key: jwt-secret
+      {{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 The list of `env` for web/scheduler/worker/flower Pods
 EXAMPLE USAGE: {{ include "airflow.env" (dict "Release" .Release "Values" .Values "CONNECTION_CHECK_MAX_COUNT" "0") }}
 */}}
 {{- define "airflow.env" }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
-{{- if and (not .Values.airflow.jwtSecret) (not .Values.airflow.jwtSecretName) }}
-- name: AIRFLOW__API_AUTH__JWT_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ printf "%s-jwt-secret" (include "airflow.fullname" .) }}
-      key: jwt-secret
-{{- else if .Values.airflow.jwtSecretName }}
-- name: AIRFLOW__API_AUTH__JWT_SECRET
-  valueFrom:
-    secretKeyRef:
-      name: {{ .Values.airflow.jwtSecretName }}
-      key: {{ .Values.airflow.jwtSecretKey }}
-{{- end }}
-{{- end }}
 {{- /* set DATABASE_USER */ -}}
 {{- if .Values.postgresql.enabled }}
 - name: DATABASE_USER
@@ -619,15 +578,13 @@ EXAMPLE USAGE: {{ include "airflow.env" (dict "Release" .Release "Values" .Value
 {{- end }}
 {{- end }}
 
-{{- /* disable the `/entrypoint` db connection check */ -}}
-{{- if not .Values.airflow.legacyCommands }}
+{{- /* disable the `/entrypoint` db connection check */}}
 - name: CONNECTION_CHECK_MAX_COUNT
   {{- if .CONNECTION_CHECK_MAX_COUNT }}
   value: {{ .CONNECTION_CHECK_MAX_COUNT | quote }}
   {{- else }}
   value: "0"
   {{- end }}
-{{- end }}
 
 {{- /* set AIRFLOW__CELERY__FLOWER_BASIC_AUTH */ -}}
 {{- if .Values.flower.basicAuthSecret }}

@@ -48,12 +48,8 @@
 {{- /* if we show the webserver secret_key warning */ -}}
 {{- $web_secret_warning := true }}
 {{- $web_secret_envvars := list }}
-{{- if semverCompare "<3.0.0" (include "airflow.version" .) }}
-  {{- $web_secret_envvars = list "AIRFLOW__WEBSERVER__SECRET_KEY" "AIRFLOW__WEBSERVER__SECRET_KEY_CMD" "AIRFLOW__WEBSERVER__SECRET_KEY_SECRET" }}
-{{- else }}
-  {{- $web_secret_envvars = list "AIRFLOW__API__SECRET_KEY" "AIRFLOW__API__SECRET_KEY_CMD" "AIRFLOW__API__SECRET_KEY_SECRET" }}
-{{- end }}
-{{- if and (ne .Values.airflow.webserverSecretKey "THIS IS UNSAFE!") (ne .Values.airflow.apiSecretKey "") (ne .Values.airflow.apiSecretKeyName "")  }}
+{{- $web_secret_envvars = list "AIRFLOW__API__SECRET_KEY" "AIRFLOW__API__SECRET_KEY_CMD" "AIRFLOW__API__SECRET_KEY_SECRET" }}
+{{- if and (ne .Values.airflow.apiSecretKey "") (ne .Values.airflow.apiSecretKeyName "") }}
 {{- $web_secret_warning = false }}
 {{- end }}
 {{- range $key, $val := .Values.airflow.config }}
@@ -93,7 +89,7 @@
 {{- $extra_pip_warning = true }}
 {{- else if .Values.scheduler.extraPipPackages }}
 {{- $extra_pip_warning = true }}
-{{- else if .Values.web.extraPipPackages }}
+{{- else if .Values.apiServer.extraPipPackages }}
 {{- $extra_pip_warning = true }}
 {{- else if .Values.workers.extraPipPackages }}
 {{- $extra_pip_warning = true }}
@@ -133,30 +129,18 @@
 {{- $ingressWebHost := "" }}
 {{- $ingressWebPath := "" }}
 {{- $ingressWebTlsEnabled := false }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
-  {{- $webServiceName = printf "%s-api-server" (include "airflow.fullname" .) }}
-  {{- $webServicePort = .Values.apiServer.service.externalPort }}
-  {{- $webServiceType = .Values.apiServer.service.type }}
-  {{- $webComponentName = "API Server" }}
-  {{- $ingressWebHost = .Values.ingress.apiServer.host }}
-  {{- $ingressWebPath = .Values.ingress.apiServer.path }}
-  {{- $ingressWebTlsEnabled = .Values.ingress.apiServer.tls.enabled }}
-{{- else }}
-  {{- $webServiceName = printf "%s-web" (include "airflow.fullname" .) }}
-  {{- $webServicePort = .Values.web.service.externalPort }}
-  {{- $webServiceType = .Values.web.service.type }}
-  {{- $webComponentName = "Webserver" }}
-  {{- $ingressWebHost = .Values.ingress.web.host }}
-  {{- $ingressWebPath = .Values.ingress.web.path }}
-  {{- $ingressWebTlsEnabled = .Values.ingress.web.tls.enabled }}
-{{- end }}
+{{- $webServiceName = printf "%s-api-server" (include "airflow.fullname" .) }}
+{{- $webServicePort = .Values.apiServer.service.externalPort }}
+{{- $webServiceType = .Values.apiServer.service.type }}
+{{- $webComponentName = "API Server" }}
+{{- $ingressWebHost = .Values.ingress.apiServer.host }}
+{{- $ingressWebPath = .Values.ingress.apiServer.path }}
+{{- $ingressWebTlsEnabled = .Values.ingress.apiServer.tls.enabled }}
 
 {{- /* if we show the JWT secret warning (Airflow 3.0+ only) */ -}}
 {{- $jwt_secret_warning := false }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
-  {{- if and (not .Values.airflow.jwtSecret) (not .Values.airflow.jwtSecretName) }}
-  {{- $jwt_secret_warning = true }}
-  {{- end }}
+{{- if and (not .Values.airflow.jwtSecret) (not .Values.airflow.jwtSecretName) }}
+{{- $jwt_secret_warning = true }}
 {{- end }}
 
 {{- /* if we show the auth manager warning (Airflow 3.1.0+ only) */ -}}
@@ -225,7 +209,7 @@ Use these commands to port-forward the Services to your localhost:
 {{- if .Values.flower.enabled }}
   * Flower Dashboard:   kubectl port-forward svc/{{ include "airflow.fullname" . }}-flower 5555:5555 --namespace {{ .Release.Namespace }}
 {{- end }}
-{{- if and (semverCompare ">=3.0.0" (include "airflow.version" .)) (.Values.dagProcessor.enabled) }}
+{{- if .Values.dagProcessor.enabled }}
   * DAG Processor:      kubectl get deploy/{{ include "airflow.fullname" . }}-dag-processor --namespace {{ .Release.Namespace }}
 {{- else if and (semverCompare ">=2.3.0" (include "airflow.version" .)) (.Values.dagProcessor.enabled) }}
   * DAG Processor:      kubectl get deploy/{{ include "airflow.fullname" . }}-dag-processor --namespace {{ .Release.Namespace }} (standalone mode)
@@ -247,7 +231,7 @@ Use these commands to port-forward the Services to your localhost:
   * HELP: set a custom value with `airflow.apiSecretKey` or `AIRFLOW__API__SECRET_KEY`
 {{- else }}
 [CRITICAL] default webserver secret_key value!
-  * HELP: set a custom value with `airflow.webserverSecretKey` or `AIRFLOW__WEBSERVER__SECRET_KEY`
+  * HELP: set a custom value with `airflow.apiSecretKey` or `AIRFLOW__API__SECRET_KEY`
 {{- end }}
 {{ end }}
 

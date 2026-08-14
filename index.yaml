@@ -2,6 +2,28 @@ apiVersion: v1
 entries:
   airflow:
   - apiVersion: v2
+    appVersion: 3.3.1
+    created: "2026-08-14T14:40:44.615394204Z"
+    description: Airflow Helm Chart (User Community) - the standard way to deploy
+      Apache Airflow on Kubernetes with Helm. This major supports Apache Airflow 3
+      only; use the 10.X.X releases for Airflow 2.
+    digest: 7266406580b935a40a58612329949820872e2973a60aeb44c3851fdcf0d07746
+    home: https://github.com/airflow-helm/charts/tree/main/charts/airflow
+    icon: https://avatars.githubusercontent.com/u/71061241
+    keywords:
+    - airflow
+    - dag
+    - workflow
+    maintainers:
+    - name: thesuperzapper
+      url: https://github.com/thesuperzapper
+    name: airflow
+    sources:
+    - https://github.com/airflow-helm/charts/tree/main/charts/airflow
+    urls:
+    - https://github.com/shepherd44/airflow-helm-charts/releases/download/airflow-11.0.0/airflow-11.0.0.tgz
+    version: 11.0.0
+  - apiVersion: v2
     appVersion: 2.8.4
     created: "2026-08-14T02:54:02.089330576Z"
     dependencies:
@@ -109,4 +131,4 @@ entries:
     urls:
     - https://github.com/shepherd44/airflow-helm-charts/releases/download/airflow-9.0.0/airflow-9.0.0.tgz
     version: 9.0.0
-generated: "2026-08-14T02:54:02.089357126Z"
+generated: "2026-08-14T14:40:44.615413079Z"

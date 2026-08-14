@@ -1,0 +1,41 @@
+## this values file tests the shape we actually run in production:
+## - airflow 3.3.x
+## - BOTH executors at once (the replacement for the removed CeleryKubernetesExecutor)
+## - FAB auth manager, so the `sync-users` job has `airflow.providers.fab.www.app`
+## - the JWT signing key supplied explicitly (there is no auto-generated fallback)
+##
+airflow:
+  image:
+    repository: apache/airflow
+    tag: 3.3.1-python3.12
+
+  ## the FAB provider is NOT bundled with airflow 3, and `sync-users` imports it
+  extraPipPackages:
+    - "apache-airflow-providers-fab>=3.0.2"
+
+  config:
+    AIRFLOW__CORE__AUTH_MANAGER: "airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager"
+
+  jwtSecret: "ci-only-not-a-real-secret"
+  apiSecretKey: "ci-only-not-a-real-secret"
+
+  executors: ["CeleryExecutor", "KubernetesExecutor"]
+
+apiServer:
+  replicas: 1
+
+dagProcessor:
+  enabled: true
+  replicas: 1
+
+scheduler:
+  replicas: 1
+
+workers:
+  replicas: 1
+
+triggerer:
+  replicas: 1
+
+flower:
+  enabled: true

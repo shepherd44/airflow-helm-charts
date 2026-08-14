@@ -1,6 +1,10 @@
-# Airflow 3.0 Migration Guide
+# Airflow 3 Migration Guide
 
-This guide explains how to migrate from Airflow 2.x to Airflow 3.0+ using the User-Community Airflow Helm Chart.
+This guide explains how to move from **chart `10.X.X` on Airflow 2** to **chart `11.X.X` on Airflow 3**.
+
+Chart `11.X.X` supports Airflow 3 only. There is no dual-version mode and no `airflowVersion`
+switch: the chart reads the version from `airflow.image.tag` and refuses to render below `3.0.0`.
+Instances that are not ready to move stay on the `10.X.X` releases until they are.
 
 ## Table of Contents
 
@@ -21,7 +25,7 @@ Airflow 3.0 introduces significant architectural changes that affect how compone
 - **API Server**: Handles all API requests (replaces the Webserver's API functionality)
 - **DAG Processor**: Handles DAG parsing (formerly part of the Scheduler)
 
-This chart automatically manages these architectural differences based on your `airflow.image.tag` configuration.
+Chart `11.X.X` always deploys this architecture; chart `10.X.X` always deploys the Airflow 2 one.
 
 ## Key Architectural Changes
 
@@ -216,9 +220,9 @@ When deploying Airflow 2.x, the chart validates the opposite:
    - ❌ **Invalid**: `apiServer.replicas: 2`
    - ✅ **Valid**: `web.replicas: 2` and `apiServer.replicas: 0` (default)
 
-2. **Webserver Secret Key**: You must use `airflow.webserverSecretKey` instead of `airflow.apiSecretKey`
+2. **Webserver Secret Key**: only exists in chart `10.X.X`. To go back to Airflow 2 you change the chart version back to `10.X.X`, not just the image tag
    - ❌ **Invalid**: Setting `airflow.apiSecretKey`
-   - ✅ **Valid**: `airflow.webserverSecretKey: "your-secret-key"`
+   - ✅ **Valid** (on chart `10.X.X` only): `airflow.webserverSecretKey: "your-secret-key"`
 
 3. **Ingress Configuration**: You must use `ingress.web.*` instead of `ingress.apiServer.*`
    - ❌ **Invalid**: `ingress.apiServer.host: "airflow.example.com"`

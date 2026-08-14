@@ -1,12 +1,15 @@
 ## this values file tests Airflow 3.0+ with the new architecture
 ## - API Server (replaces Webserver)
 ## - DAG Processor (separate from Scheduler)
-## - JWT authentication (auto-generated if not set)
+## - JWT authentication (must be set explicitly, there is no auto-generated fallback)
 ##
 airflow:
   image:
     repository: apache/airflow
     tag: 3.0.1-python3.11
+
+  ## the chart refuses to render without a JWT secret
+  jwtSecret: "ci-only-not-a-real-secret"
 
   ## minimal resources for CI
   executors: [CeleryExecutor]

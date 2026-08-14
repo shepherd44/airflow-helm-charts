@@ -2,27 +2,30 @@
 ## CONFIG | Airflow Configs
 ########################################
 airflow:
-  ## if we use legacy 1.10 airflow commands
-  legacyCommands: false
-
   ## configs for the airflow container image
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: apache/airflow
-    tag: 2.8.4-python3.9
+    tag: 3.3.1-python3.12
 
-  ## the airflow executor type to use
-  executor: KubernetesExecutor
+  ## the airflow executors to use (the first is the primary)
+  executors: ["KubernetesExecutor"]
 
   ## the fernet encryption key (sets `AIRFLOW__CORE__FERNET_KEY`)
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-fernet-key.md
   ## [WARNING] change from default value to ensure security
   fernetKey: "7T512UXSSmBOkpWimFHIVb8jK6lfmSAvx4mO6Arehnc="
 
-  ## the secret_key for flask (sets `AIRFLOW__WEBSERVER__SECRET_KEY`)
+  ## the secret_key for the api-server (sets `AIRFLOW__API__SECRET_KEY`)
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-webserver-secret-key.md
   ## [WARNING] change from default value to ensure security
-  webserverSecretKey: "THIS IS UNSAFE!"
+  apiSecretKey: "THIS IS UNSAFE!"
+
+  ## the key which signs Task Execution API tokens (sets `AIRFLOW__API_AUTH__JWT_SECRET`)
+  ## - REQUIRED on airflow 3, and must be identical in the scheduler and api-server
+  ## - [PRODUCTION] use `jwtSecretName` to read it from a Secret you manage instead
+  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-jwt-secret.md
+  jwtSecret: "THIS IS UNSAFE!"
 
   ## environment variables for airflow configs
   ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md

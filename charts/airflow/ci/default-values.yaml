@@ -1,2 +1,8 @@
 ## this values file tests the defaults
 ##
+## NOTE: a JWT secret is the one thing the chart cannot default safely -- an auto-generated
+##       value would change on every render and rotate the key on every GitOps sync -- so even
+##       the "defaults" case has to supply one.
+##
+airflow:
+  jwtSecret: "ci-only-not-a-real-secret"

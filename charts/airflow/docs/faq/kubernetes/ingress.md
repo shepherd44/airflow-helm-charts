@@ -28,7 +28,7 @@ ingress:
   ## WARNING: set as "networking.k8s.io/v1beta1" for Kubernetes 1.18 and earlier
   apiVersion: networking.k8s.io/v1
   
-  ## airflow webserver ingress configs
+  ## airflow api-server ingress configs
   web:
     annotations: {}
     host: "example.com"

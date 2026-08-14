@@ -10,15 +10,15 @@
 
 > 🟥 __Warning__ 🟥
 >
-> We strongly recommend that you DO NOT USE the default `airflow.webserverSecretKey` in production.
+> We strongly recommend that you DO NOT USE the default `airflow.apiSecretKey` in production.
 
-You may set the webserver secret_key using the `airflow.webserverSecretKey` value, which sets the `AIRFLOW__WEBSERVER__SECRET_KEY` environment variable.
+You may set the api-server secret_key using the `airflow.apiSecretKey` value, which sets the `AIRFLOW__API__SECRET_KEY` environment variable.
 
-For example, to define the secret_key with `airflow.webserverSecretKey`:
+For example, to define the secret_key with `airflow.apiSecretKey`:
 
 ```yaml
 aiflow:
-  webserverSecretKey: "THIS IS UNSAFE!"
+  apiSecretKey: "THIS IS UNSAFE!"
 ```
 
 ### Airflow 3.X
@@ -40,17 +40,17 @@ aiflow:
 
 ### Airflow 2.X
 
-You may set the webserver secret_key from a Kubernetes Secret by referencing it with the `airflow.extraEnv` value.
+You may set the api-server secret_key from a Kubernetes Secret by referencing it with the `airflow.extraEnv` value.
 
-For example, to use the `value` key from the existing Secret called `airflow-webserver-secret-key`:
+For example, to use the `value` key from the existing Secret called `airflow-api-secret-key`:
 
 ```yaml
 airflow:
   extraEnv:
-    - name: AIRFLOW__WEBSERVER__SECRET_KEY
+    - name: AIRFLOW__API__SECRET_KEY
       valueFrom:
         secretKeyRef:
-          name: airflow-webserver-secret-key
+          name: airflow-api-secret-key
           key: value
 ```
 
@@ -74,29 +74,29 @@ airflow:
 
 ### Airflow 2.X
 
-You may also set the webserver secret key by specifying either the `AIRFLOW__WEBSERVER__SECRET_KEY_CMD` or `AIRFLOW__WEBSERVER__SECRET_KEY_SECRET` environment variables.
+You may also set the webserver secret key by specifying either the `AIRFLOW__API__SECRET_KEY_CMD` or `AIRFLOW__API__SECRET_KEY_SECRET` environment variables.
 Read about how the `_CMD` or `_SECRET` configs work in the ["Setting Configuration Options"](https://airflow.apache.org/docs/apache-airflow/stable/howto/set-config.html) section of the Airflow documentation.
 
-For example, to use `AIRFLOW__WEBSERVER__SECRET_KEY_CMD`:
+For example, to use `AIRFLOW__API__SECRET_KEY_CMD`:
 
 ```yaml
 airflow:
-  ## WARNING: you must set `webserverSecretKey` to "", otherwise it will take precedence
-  webserverSecretKey: ""
+  ## WARNING: you must set `apiSecretKey` to "", otherwise it will take precedence
+  apiSecretKey: ""
 
   ## NOTE: this is only an example, if your value lives in a Secret, you probably want to use "Option 2" above
   config:
-    AIRFLOW__WEBSERVER__SECRET_KEY_CMD: "cat /opt/airflow/webserver-secret-key/value"
+    AIRFLOW__API__SECRET_KEY_CMD: "cat /opt/airflow/api-secret-key/value"
       
   extraVolumeMounts:
-    - name: webserver-secret-key
-      mountPath: /opt/airflow/webserver-secret-key
+    - name: api-secret-key
+      mountPath: /opt/airflow/api-secret-key
       readOnly: true
       
   extraVolumes:
-    - name: webserver-secret-key
+    - name: api-secret-key
       secret:
-        secretName: airflow-webserver-secret-key
+        secretName: airflow-api-secret-key
 ```
 
 ### Airflow 3.X
@@ -125,3 +125,12 @@ airflow:
       secret:
         secretName: airflow-api-secret-key
 ```
+
+## Note on Airflow 3
+
+In Airflow 3 this key lives under `[api] secret_key` rather than `[webserver] secret_key`.
+It signs the api-server's session cookies AND authorises the log-fetch requests that the
+api-server makes to celery workers, so it must be identical in every component.
+
+It is a **different key** from the Task Execution API signing key -- see
+[set-jwt-secret.md](set-jwt-secret.md). You need both.

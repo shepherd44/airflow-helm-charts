@@ -80,6 +80,17 @@ spec:
             - "redis-server"
             - "--requirepass"
             - "$(REDIS_PASSWORD)"
+            {{- /* NOTE: without `--dir`, redis writes dump.rdb to its working directory, which
+                   is only `/data` by luck of the official image's WORKDIR. Other redis images
+                   (for example bitnami ones) leave it at `/`, where the write is denied and
+                   redis then refuses writes because of `stop-writes-on-bgsave-error`. */}}
+            - "--dir"
+            - "/data"
+            {{- if not .Values.redis.persistence.enabled }}
+            {{- /* the celery broker is not persisted, so RDB snapshots only cost forks */}}
+            - "--save"
+            - ""
+            {{- end }}
           env:
             - name: REDIS_PASSWORD
               valueFrom:

@@ -1,0 +1,164 @@
+{{- if .Values.dbCleanup.enabled }}
+{{- $podNodeSelector := include "airflow.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.dbCleanup.nodeSelector) }}
+{{- $podAffinity := include "airflow.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.dbCleanup.affinity) }}
+{{- $podTolerations := include "airflow.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.dbCleanup.tolerations) }}
+{{- $podSecurityContext := include "airflow.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.dbCleanup.securityContext) }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "airflow.fullname" . }}-db-cleanup
+  labels:
+    app: {{ include "airflow.labels.app" . }}
+    component: db-cleanup
+    chart: {{ include "airflow.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  schedule: {{ .Values.dbCleanup.schedule | quote }}
+  timeZone: {{ .Values.dbCleanup.timeZone | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: {{ .Values.dbCleanup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.dbCleanup.failedJobsHistoryLimit }}
+  startingDeadlineSeconds: {{ .Values.dbCleanup.startingDeadlineSeconds }}
+  jobTemplate:
+    spec:
+      {{- if .Values.dbCleanup.activeDeadlineSeconds }}
+      activeDeadlineSeconds: {{ .Values.dbCleanup.activeDeadlineSeconds }}
+      {{- end }}
+      backoffLimit: {{ .Values.dbCleanup.backoffLimit }}
+      template:
+        metadata:
+          {{- if or .Values.airflow.podAnnotations .Values.dbCleanup.podAnnotations }}
+          annotations:
+            {{- if .Values.airflow.podAnnotations }}
+            {{- toYaml .Values.airflow.podAnnotations | nindent 12 }}
+            {{- end }}
+            {{- if .Values.dbCleanup.podAnnotations }}
+            {{- toYaml .Values.dbCleanup.podAnnotations | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          labels:
+            app: {{ include "airflow.labels.app" . }}
+            component: db-cleanup
+            release: {{ .Release.Name }}
+            {{- if .Values.dbCleanup.podLabels }}
+            {{- toYaml .Values.dbCleanup.podLabels | nindent 12 }}
+            {{- end }}
+        spec:
+          restartPolicy: Never
+          {{- if .Values.airflow.image.pullSecret }}
+          imagePullSecrets:
+            - name: {{ .Values.airflow.image.pullSecret }}
+          {{- end }}
+          {{- if $podNodeSelector }}
+          nodeSelector:
+            {{- $podNodeSelector | nindent 12 }}
+          {{- end }}
+          {{- if $podAffinity }}
+          affinity:
+            {{- $podAffinity | nindent 12 }}
+          {{- end }}
+          {{- if $podTolerations }}
+          tolerations:
+            {{- $podTolerations | nindent 12 }}
+          {{- end }}
+          {{- if $podSecurityContext }}
+          securityContext:
+            {{- $podSecurityContext | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "airflow.serviceAccountName" . }}
+          initContainers:
+            {{- include "airflow.init_container.check_db" (dict "Release" .Release "Values" .Values) | indent 12 }}
+          containers:
+            - name: db-cleanup
+              {{- include "airflow.image" . | indent 14 }}
+              resources:
+                {{- toYaml .Values.dbCleanup.resources | nindent 16 }}
+              envFrom:
+                {{- include "airflow.envFrom" . | indent 16 }}
+              env:
+                {{- include "airflow.env" . | indent 16 }}
+              command:
+                {{- include "airflow.command" . | indent 16 }}
+              args:
+                - "bash"
+                - "-c"
+                - |
+                  set -euo pipefail
+
+                  {{- /*
+                    `airflow db clean` REQUIRES --clean-before-timestamp and has no default,
+                    so the cutoff is computed at run time rather than baked into the manifest.
+                    Using the pod's own date keeps a fixed retention window on every run.
+                  */}}
+                  CUTOFF="$(date -u -d "{{ .Values.dbCleanup.retentionDays }} days ago" '+%Y-%m-%d %H:%M:%S+00:00')"
+                  echo "INFO: purging metadata older than ${CUTOFF} (retention {{ .Values.dbCleanup.retentionDays }}d)"
+
+                  exec_clean() {
+                    airflow db clean \
+                      --clean-before-timestamp "${CUTOFF}" \
+                      --batch-size {{ .Values.dbCleanup.batchSize }} \
+                      {{- if .Values.dbCleanup.tables }}
+                      --tables {{ join "," .Values.dbCleanup.tables | quote }} \
+                      {{- end }}
+                      {{- if .Values.dbCleanup.skipArchive }}
+                      --skip-archive \
+                      {{- end }}
+                      {{- if .Values.dbCleanup.dryRun }}
+                      --dry-run \
+                      {{- end }}
+                      {{- if .Values.dbCleanup.verbose }}
+                      --verbose \
+                      {{- end }}
+                      {{- range .Values.dbCleanup.extraArgs }}
+                      {{ . }} \
+                      {{- end }}
+                      --yes
+                  }
+                  exec_clean
+
+                  {{- if and .Values.dbCleanup.dropArchivedAfterDays (not .Values.dbCleanup.skipArchive) (not .Values.dbCleanup.dryRun) }}
+
+                  {{- /*
+                    `airflow db clean` archives rather than deletes: purged rows are moved into
+                    `_airflow_deleted__<table>__<YYYYMMDDHHMMSS>` tables, so the database does not
+                    actually shrink. `db drop-archived` is what reclaims the space.
+
+                    There is no "drop archives older than N days" flag and the archive tables have
+                    no retention column -- the only timestamp is in the table NAME. Note the name
+                    also gains a `__b<N>` suffix whenever --batch-size is used, which this parses
+                    for; splitting on the last `__` would read the batch number as the timestamp
+                    and silently never drop anything.
+                  */}}
+                  DROP_BEFORE="$(date -u -d "{{ .Values.dbCleanup.dropArchivedAfterDays }} days ago" '+%Y%m%d%H%M%S')"
+                  echo "INFO: dropping archive tables stamped before ${DROP_BEFORE} (keep {{ .Values.dbCleanup.dropArchivedAfterDays }}d)"
+
+                  TO_DROP="$(python3 /opt/db-cleanup/drop_archived.py "${DROP_BEFORE}")"
+
+                  if [ -n "${TO_DROP}" ]; then
+                    echo "INFO: dropping ${TO_DROP}"
+                    airflow db drop-archived --tables "${TO_DROP}" --yes
+                  else
+                    echo "INFO: no archive tables older than the cutoff"
+                  fi
+                  {{- end }}
+              volumeMounts:
+                {{- if .Values.dbCleanup.dropArchivedAfterDays }}
+                - name: db-cleanup-scripts
+                  mountPath: /opt/db-cleanup
+                  readOnly: true
+                {{- end }}
+                {{- if .Values.airflow.extraVolumeMounts }}
+                {{- toYaml .Values.airflow.extraVolumeMounts | nindent 16 }}
+                {{- end }}
+          volumes:
+            {{- if .Values.dbCleanup.dropArchivedAfterDays }}
+            - name: db-cleanup-scripts
+              secret:
+                secretName: {{ include "airflow.fullname" . }}-db-cleanup
+                defaultMode: 0755
+            {{- end }}
+            {{- if .Values.airflow.extraVolumes }}
+            {{- toYaml .Values.airflow.extraVolumes | nindent 12 }}
+            {{- end }}
+{{- end }}

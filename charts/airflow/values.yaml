@@ -1691,6 +1691,111 @@ flower:
   extraVolumes: []
 
 ###################################
+## COMPONENT | Database Cleanup
+###################################
+dbCleanup:
+  ## if a CronJob which runs `airflow db clean` is deployed
+  ## - [WARNING] this PERMANENTLY removes rows from the airflow metadata database,
+  ##   so it is opt-in; review `retentionDays` and `tables` before enabling
+  ##
+  enabled: false
+
+  ## when the cleanup runs (standard cron syntax)
+  ##
+  schedule: "0 3 * * *"
+
+  ## the timezone the `schedule` is interpreted in
+  ##
+  timeZone: "Etc/UTC"
+
+  ## how many days of metadata to keep
+  ## - the CronJob computes `--clean-before-timestamp` from this on every run,
+  ##   because that flag is REQUIRED by `airflow db clean` and has no default
+  ##
+  retentionDays: 90
+
+  ## which tables to clean (empty = airflow's own default set)
+  ## - allowed values: job, dag, dag_run, asset_event, import_error, log, sla_miss,
+  ##   task_instance, task_instance_history, task_reschedule, xcom, _xcom_archive,
+  ##   callback_request, celery_taskmeta, celery_tasksetmeta, trigger, dag_version,
+  ##   deadline, session
+  ## - [WARNING] `dag_run` is the ONLY table airflow protects: it keeps the most recent
+  ##   run per dag even if older than the cutoff. Every other table is purged strictly by
+  ##   timestamp, with these foreign-key dependencies pulled along:
+  ##     dag           -> dag_version, deadline
+  ##     dag_run       -> task_instance, deadline
+  ##     task_instance -> task_instance_history, xcom
+  ##     dag_version   -> task_instance, dag_run
+  ##     trigger       -> task_instance
+  ## - [WARNING] cleaning `dag` filters on `last_parsed_time`, so a dag which simply has
+  ##   not been parsed recently can have its metadata removed. Do not include it unless
+  ##   you mean to.
+  ##
+  tables: []
+
+  ## if purged rows are deleted outright instead of archived
+  ## - `airflow db clean` DEFAULTS TO ARCHIVING: rows are moved into
+  ##   `_airflow_deleted__<table>__<timestamp>` tables, so the database does NOT shrink
+  ## - leaving this `false` and setting `dropArchivedAfterDays` gives you a grace period
+  ##   before the space is actually reclaimed
+  ##
+  skipArchive: false
+
+  ## how many days to keep the archive tables before dropping them
+  ## - set to `~` to keep archives forever (they will accumulate)
+  ## - ignored when `skipArchive` or `dryRun` is `true`, since there is nothing to drop
+  ##
+  dropArchivedAfterDays: 30
+
+  ## maximum rows deleted or archived per transaction
+  ## - lower values hold shorter locks but run more batches
+  ##
+  batchSize: 10000
+
+  ## if the cleanup only reports what it would do
+  ##
+  dryRun: false
+
+  ## if `airflow db clean` runs with `--verbose`
+  ##
+  verbose: false
+
+  ## extra arguments appended to the `airflow db clean` command
+  ##
+  extraArgs: []
+
+  ## resource requests/limits for the cleanup Pod
+  ##
+  resources: {}
+
+  ## the nodeSelector/affinity/tolerations/securityContext configs for the cleanup Pod
+  ##
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  securityContext: {}
+
+  ## annotations/labels for the cleanup Pod
+  ##
+  podAnnotations: {}
+  podLabels: {}
+
+  ## how many finished Jobs to retain
+  ##
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  ## how long a missed schedule may still start, and how long a run may take
+  ##
+  startingDeadlineSeconds: 600
+  activeDeadlineSeconds: 3600
+
+  ## how many times a failed Job is retried
+  ##
+  backoffLimit: 1
+
+
+###################################
 ## CONFIG | Airflow Logs
 ###################################
 logs:

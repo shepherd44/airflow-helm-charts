@@ -8,6 +8,11 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [11.1.1] - 2026-08-15
+
+### Fixed
+- the KubernetesExecutor task-pod template no longer overrides `AIRFLOW__CORE__EXECUTOR` to `LocalExecutor`. Airflow 3 validates a task's `executor` field against `[core] executors` while parsing the DAG *inside the task Pod*, so the override made every task that names an executor fail with `UnknownExecutorException` -- which is exactly how tasks are routed now that `CeleryKubernetesExecutor` is gone. The executor list from the config-envs Secret is now what the task Pod sees
+
 ## [11.1.0] - 2026-08-15
 
 ### Added

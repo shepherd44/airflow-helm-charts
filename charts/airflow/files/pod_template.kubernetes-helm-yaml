@@ -66,9 +66,20 @@ spec:
       envFrom:
         {{- include "airflow.envFrom" . | indent 8 }}
       env:
-        ## KubernetesExecutor Pods use LocalExecutor internally
-        - name: AIRFLOW__CORE__EXECUTOR
-          value: LocalExecutor
+        {{- /* NOTE: this deliberately does NOT override AIRFLOW__CORE__EXECUTOR.
+               On airflow 2 these Pods were given `LocalExecutor`, because a task Pod runs
+               its one task in-process and never schedules anything. Airflow 3 validates the
+               task's `executor` field against `[core] executors` while parsing the DAG --
+               inside the task Pod. With the executor list overridden to `LocalExecutor`,
+               any task that names an executor is rejected:
+
+                 UnknownExecutorException: Task '...' specifies executor 'KubernetesExecutor',
+                 which is not available. Make sure it is listed in your [core] executors
+                 configuration
+
+               which is exactly how tasks are routed now that `CeleryKubernetesExecutor` is
+               gone. The value from `airflow.envFrom` (the config-envs Secret) carries the
+               real executor list and must win. */}}
         {{- /* NOTE: the FIRST definition of an `env` takes precedence (so we include user-defined `env` LAST) */ -}}
         {{- /* NOTE: we set `CONNECTION_CHECK_MAX_COUNT=20` to enable airflow's `/entrypoint` db connection check */ -}}
         {{- include "airflow.env" (dict "Release" .Release "Values" .Values "CONNECTION_CHECK_MAX_COUNT" "20")  | indent 8 }}

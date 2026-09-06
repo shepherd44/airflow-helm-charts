@@ -100,11 +100,20 @@ The chart is an OCI artifact in GHCR, there is no helm repo to add:
 helm install airflow-cluster oci://ghcr.io/shepherd44/charts/airflow \
   --namespace airflow-cluster \
   --create-namespace \
-  --version 12.0.0 \
+  --version 12.0.1 \
   --values ./custom-values.yaml
 ```
 
 See the [Quickstart Guide](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow/docs/guides/quickstart.md) for a walk-through.
+
+Each published chart is signed with keyless [cosign](https://docs.sigstore.dev/), so there is no
+public key to distribute — the certificate identity is the workflow that published it:
+
+```shell
+cosign verify ghcr.io/shepherd44/charts/airflow:12.0.1 \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/shepherd44/airflow-helm-charts/'
+```
 
 <br>
 

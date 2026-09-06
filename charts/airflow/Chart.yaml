@@ -1,7 +1,7 @@
 apiVersion: v2
 description: Airflow Helm Chart (User Community) - the standard way to deploy Apache Airflow on Kubernetes with Helm. Airflow 3 only, published to GHCR as an OCI artifact.
 name: airflow
-version: 12.0.0
+version: 12.0.1
 appVersion: 3.3.1
 icon: https://avatars.githubusercontent.com/u/71061241
 home: https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow

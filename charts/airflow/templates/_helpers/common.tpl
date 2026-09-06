@@ -199,15 +199,10 @@ Check if FAB (Flask AppBuilder) auth manager is being used.
 Returns "true" if FAB is being used, empty otherwise.
 */}}
 {{- define "airflow.auth.isFAB" -}}
-{{- if semverCompare "<3.0.0" (include "airflow.version" .) -}}
-{{- /* Airflow < 3.0 uses FAB by default */ -}}
-true
-{{- else -}}
 {{- /* Airflow >= 3.0: check if auth_manager is explicitly set to FAB */ -}}
 {{- $authManager := .Values.airflow.config.AIRFLOW__CORE__AUTH_MANAGER | default "" | lower -}}
 {{- if contains "fab" $authManager -}}
 true
-{{- end -}}
 {{- end -}}
 {{- end -}}
 

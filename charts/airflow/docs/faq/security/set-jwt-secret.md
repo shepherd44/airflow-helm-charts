@@ -1,6 +1,6 @@
-[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#frequently-asked-questions)
+[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#frequently-asked-questions)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Set Airflow JWT Secret
 
@@ -12,7 +12,7 @@
 
 ## When is this needed?
 
-The JWT (JSON Web Token) secret is only used by **Airflow 3.0 and later**. If you are using Airflow 2.x, you do NOT need to set this value.
+The JWT (JSON Web Token) secret is used by the Task Execution API.
 
 ### Auto-Generation (Default)
 

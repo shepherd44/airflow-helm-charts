@@ -489,7 +489,6 @@ Airflow's own config reference says the same thing:
 Include this ONLY in the api-server and scheduler main containers.
 */}}
 {{- define "airflow.env.jwt" }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 - name: AIRFLOW__API_AUTH__JWT_SECRET
   valueFrom:
     secretKeyRef:
@@ -500,7 +499,6 @@ Include this ONLY in the api-server and scheduler main containers.
       name: {{ printf "%s-jwt-secret" (include "airflow.fullname" .) }}
       key: jwt-secret
       {{- end }}
-{{- end }}
 {{- end }}
 
 {{/*

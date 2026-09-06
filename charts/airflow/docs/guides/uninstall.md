@@ -1,6 +1,6 @@
-[🔗 Return to `Table of Contents` for more guides 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#guides)
+[🔗 Return to `Table of Contents` for more guides 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#guides)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Uninstall Guide
 

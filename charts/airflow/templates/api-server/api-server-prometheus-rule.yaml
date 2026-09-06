@@ -1,4 +1,4 @@
-{{- if and (.Values.prometheusRule.enabled) (semverCompare ">=3.0.0" (include "airflow.version" .)) }}
+{{- if .Values.prometheusRule.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

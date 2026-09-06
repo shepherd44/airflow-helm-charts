@@ -8,7 +8,6 @@
 {{- $volumeMounts := include "airflow.volumeMounts" (dict "Release" .Release "Values" .Values "extraPipPackages" $extraPipPackages "extraVolumeMounts" $extraVolumeMounts) }}
 {{- $extraVolumes := .Values.apiServer.extraVolumes }}
 {{- $volumes := include "airflow.volumes" (dict "Release" .Release "Values" .Values "extraPipPackages" $extraPipPackages "extraVolumes" $extraVolumes "extraVolumeMounts" $extraVolumeMounts) }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -179,4 +178,3 @@ spec:
             {{- end }}
             defaultMode: 0644
         {{- end }}
-{{- end }}

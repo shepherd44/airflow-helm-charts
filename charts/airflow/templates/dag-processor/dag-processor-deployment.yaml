@@ -8,7 +8,7 @@
 {{- $volumeMounts := include "airflow.volumeMounts" (dict "Release" .Release "Values" .Values "extraPipPackages" $extraPipPackages "extraVolumeMounts" $extraVolumeMounts) }}
 {{- $extraVolumes := .Values.dagProcessor.extraVolumes }}
 {{- $volumes := include "airflow.volumes" (dict "Release" .Release "Values" .Values "extraPipPackages" $extraPipPackages "extraVolumes" $extraVolumes "extraVolumeMounts" $extraVolumeMounts) }}
-{{- if and (semverCompare ">=2.3.0" (include "airflow.version" .)) .Values.dagProcessor.enabled }}
+{{- if .Values.dagProcessor.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

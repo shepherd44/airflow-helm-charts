@@ -1,5 +1,11 @@
 name: "release charts"
 
+# Publishes the chart as an OCI artifact in GHCR.
+#
+# The gh-pages Helm repo is frozen: every version up to 11.1.0 stays served from
+# there for the deployments still pointing at it, but nothing new is added. GHCR
+# is the only channel from here on, so a chart-releaser run would only republish
+# what the registry already has.
 on:
   push:
     branches:
@@ -8,29 +14,60 @@ on:
       - "charts/*/Chart.yaml"
 
 jobs:
-  release:
+  publish-oci:
     runs-on: ubuntu-latest
+    permissions:
+      # The release tag replaces the one chart-releaser used to push.
+      contents: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
       - name: Install Helm
         uses: azure/setup-helm@v4.2.0
         with:
           version: v3.13.3
 
-      - name: Add Helm Dependency Repos
+      - name: Read the chart version
+        id: chart
         run: |
-          helm repo add stable https://charts.helm.sh/stable
+          version=$(awk '/^version:/{print $2; exit}' charts/airflow/Chart.yaml)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=airflow-$version" >> "$GITHUB_OUTPUT"
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.6.0
+      # Same shape as the image workflows: an existing tag on this commit is fine,
+      # an existing tag on another commit means someone shipped without a bump.
+      - name: Tag the release
         env:
-          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.chart.outputs.tag }}
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          if git show-ref --verify --quiet "refs/tags/$TAG_NAME"; then
+            if [ "$(git rev-parse HEAD)" = "$(git rev-parse "$TAG_NAME^{commit}")" ]; then
+              echo "::warning::tag '$TAG_NAME' already points here, continuing..."
+            else
+              echo "::error::tag '$TAG_NAME' exists on another commit, bump the chart version"
+              exit 1
+            fi
+          else
+            git tag "$TAG_NAME"
+            git push origin "$TAG_NAME"
+          fi
+
+      - name: Push to ghcr.io
+        run: |
+          # Registry paths are case-sensitive, the GitHub owner is not.
+          repo="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/charts"
+          echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login ghcr.io -u '${{ github.actor }}' --password-stdin
+          # This workflow fires on any Chart.yaml change, not only a version bump,
+          # so a published version must never be repackaged over itself.
+          if helm show chart "oci://$repo/airflow" --version '${{ steps.chart.outputs.version }}' >/dev/null 2>&1; then
+            echo "airflow ${{ steps.chart.outputs.version }} already published to $repo, nothing to push"
+            exit 0
+          fi
+          helm package charts/airflow --destination /tmp/pkg
+          helm push "/tmp/pkg/airflow-${{ steps.chart.outputs.version }}.tgz" "oci://$repo"

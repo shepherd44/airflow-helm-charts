@@ -20,6 +20,9 @@ jobs:
       # The release tag replaces the one chart-releaser used to push.
       contents: write
       packages: write
+      # Keyless signing: the identity in the certificate is this workflow, proven
+      # by the OIDC token. There is no private key anywhere.
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +33,9 @@ jobs:
         uses: azure/setup-helm@v4.2.0
         with:
           version: v3.13.3
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
 
       - name: Read the chart version
         id: chart
@@ -59,15 +65,46 @@ jobs:
           fi
 
       - name: Push to ghcr.io
+        id: push
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
         run: |
           # Registry paths are case-sensitive, the GitHub owner is not.
           repo="ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/charts"
+          # Two logins, on purpose: helm keeps its credentials in its own config
+          # and cosign reads ~/.docker/config.json. Without the docker login the
+          # push succeeds and the signature upload comes back UNAUTHORIZED.
           echo '${{ secrets.GITHUB_TOKEN }}' | helm registry login ghcr.io -u '${{ github.actor }}' --password-stdin
+          echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
           # This workflow fires on any Chart.yaml change, not only a version bump,
           # so a published version must never be repackaged over itself.
-          if helm show chart "oci://$repo/airflow" --version '${{ steps.chart.outputs.version }}' >/dev/null 2>&1; then
-            echo "airflow ${{ steps.chart.outputs.version }} already published to $repo, nothing to push"
+          if helm show chart "oci://$repo/airflow" --version "$VERSION" >/dev/null 2>&1; then
+            echo "airflow $VERSION already published to $repo, nothing to push"
             exit 0
           fi
           helm package charts/airflow --destination /tmp/pkg
-          helm push "/tmp/pkg/airflow-${{ steps.chart.outputs.version }}.tgz" "oci://$repo"
+          # helm push prints Pushed:/Digest: on stderr, not stdout, so the
+          # redirect is load-bearing: without it the log is empty and the digest
+          # comes out blank.
+          helm push "/tmp/pkg/airflow-$VERSION.tgz" "oci://$repo" 2>&1 | tee /tmp/push.log
+          digest=$(awk '/^Digest: /{print $2}' /tmp/push.log)
+          if [ -z "$digest" ]; then
+            echo "helm push reported no digest; refusing to sign a guessed reference" >&2
+            exit 1
+          fi
+          echo "ref=$repo/airflow@$digest" >> "$GITHUB_OUTPUT"
+
+      # Signs the artifact by digest, not by tag: a tag can be moved, a digest
+      # cannot. --yes skips the confirmation prompt for the transparency log.
+      - name: Sign
+        if: steps.push.outputs.ref != ''
+        run: cosign sign --yes '${{ steps.push.outputs.ref }}'
+
+      - name: Verify what was just published
+        if: steps.push.outputs.ref != ''
+        run: |
+          cosign verify '${{ steps.push.outputs.ref }}' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' \
+            > /dev/null
+          echo "published and verified: ${{ steps.push.outputs.ref }}"

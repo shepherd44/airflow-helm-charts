@@ -8,6 +8,12 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [12.0.1] - 2026-09-07
+
+### Added
+- published charts are signed with keyless [cosign](https://docs.sigstore.dev/). There is no public key to distribute: the certificate identity is the publishing workflow, proven by its OIDC token, and the signature is made against the artifact's digest rather than its tag. `charts/airflow/README.md` carries the `cosign verify` invocation
+- `12.0.0` is unsigned — it was published before this, and the release workflow never republishes a version that already exists
+
 ## [12.0.0] - 2026-09-06
 
 > 🟥 __IMPORTANT__ 🟥

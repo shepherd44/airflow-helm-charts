@@ -1,6 +1,6 @@
-[🔗 Return to `Table of Contents` for more guides 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#guides)
+[🔗 Return to `Table of Contents` for more guides 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#guides)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Quickstart Guide
 
@@ -29,19 +29,7 @@
 > Alibaba Cloud | [Alibaba Cloud Container Service for Kubernetes (ACK)](https://www.alibabacloud.com/product/kubernetes)
 > IBM Cloud | [IBM Cloud Kubernetes Service (IKS)](https://www.ibm.com/cloud/kubernetes-service)
 
-## Step 2 - Add the Helm Repository
-
-The following commands will add our repository to your helm:
-
-```shell
-## add this helm repository
-helm repo add airflow-stable https://airflow-helm.github.io/charts
-
-## update your helm repo cache
-helm repo update
-```
-
-## Step 3 - Create your Custom Values File
+## Step 2 - Create your Custom Values File
 
 Helm charts are configured with things called values, the full list of a chart's values are listed in a chart's `values.yaml` file
 (which also sets the defaults).
@@ -71,7 +59,7 @@ We recommend that you start your `custom-values.yaml` file from one of our sampl
 > - [`Learn YAML in Y minutes`](https://learnxinyminutes.com/docs/yaml/)
 > - [`YAML Multiline Strings`](https://yaml-multiline.info/)
 
-## Step 4 - Install the Airflow Chart
+## Step 3 - Install the Airflow Chart
 
 ```shell
 ## set the release-name & namespace
@@ -84,9 +72,9 @@ kubectl create ns "$AIRFLOW_NAMESPACE"
 ## install using helm 3
 helm install \
   "$AIRFLOW_NAME" \
-  airflow-stable/airflow \
+  oci://ghcr.io/shepherd44/charts/airflow \
   --namespace "$AIRFLOW_NAMESPACE" \
-  --version "8.X.X" \
+  --version "12.X.X" \
   --values ./custom-values.yaml
   
 ## wait until the above command returns and resources become ready 
@@ -99,14 +87,14 @@ helm install \
 
 > 🟦 __Tip__ 🟦
 >
-> - find the full list of chart versions in our [CHANGELOG](https://github.com/airflow-helm/charts/blob/main/charts/airflow/CHANGELOG.md)
+> - find the full list of chart versions in our [CHANGELOG](https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/CHANGELOG.md)
 > - `Watch 👀 on GitHub` to be notified about new chart versions, click "watch" → "custom" → "releases".
 
-## Step 5 - Access the Airflow UI
+## Step 4 - Access the Airflow UI
 
 ```shell
 ## port-forward the airflow api-server
-kubectl port-forward svc/${AIRFLOW_NAME}-web 8080:8080 --namespace $AIRFLOW_NAMESPACE
+kubectl port-forward svc/${AIRFLOW_NAME}-api-server 8080:8080 --namespace $AIRFLOW_NAMESPACE
 
 ## open your browser to: http://localhost:8080 
 ## (default login: `admin`/`admin`)

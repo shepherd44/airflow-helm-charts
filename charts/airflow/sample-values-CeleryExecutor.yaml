@@ -3,7 +3,7 @@
 ########################################
 airflow:
   ## configs for the airflow container image
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/configuration/airflow-version.md
   image:
     repository: apache/airflow
     tag: 3.3.1-python3.12
@@ -12,29 +12,29 @@ airflow:
   executors: ["CeleryExecutor"]
 
   ## the fernet encryption key (sets `AIRFLOW__CORE__FERNET_KEY`)
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-fernet-key.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/security/set-fernet-key.md
   ## [WARNING] change from default value to ensure security
   fernetKey: "7T512UXSSmBOkpWimFHIVb8jK6lfmSAvx4mO6Arehnc="
 
   ## the secret_key for the api-server (sets `AIRFLOW__API__SECRET_KEY`)
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-webserver-secret-key.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/security/set-webserver-secret-key.md
   ## [WARNING] change from default value to ensure security
   apiSecretKey: "THIS IS UNSAFE!"
 
   ## the key which signs Task Execution API tokens (sets `AIRFLOW__API_AUTH__JWT_SECRET`)
   ## - REQUIRED on airflow 3, and must be identical in the scheduler and api-server
   ## - [PRODUCTION] use `jwtSecretName` to read it from a Secret you manage instead
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/set-jwt-secret.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/security/set-jwt-secret.md
   jwtSecret: "THIS IS UNSAFE!"
 
   ## environment variables for airflow configs
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md
   config:
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "False"
     AIRFLOW__CORE__LOAD_EXAMPLES: "False"
 
   ## a list of users to create
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/security/airflow-users.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/security/airflow-users.md
   users:
     - username: admin
       password: admin
@@ -44,34 +44,34 @@ airflow:
       lastName: admin
 
   ## a list airflow connections to create
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-connections.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/dags/airflow-connections.md
   connections: []
 
   ## a list airflow variables to create
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/dags/airflow-variables.md
   variables: []
 
   ## a list airflow pools to create
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/airflow-pools.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/dags/airflow-pools.md
   pools: []
 
   ## extra pip packages to install in airflow Pods
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/configuration/extra-python-packages.md
   ## [WARNING] this feature is not recommended for production use, see docs
   extraPipPackages: []
 
   ## extra environment variables for the airflow Pods
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-environment-variables.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-environment-variables.md
   extraEnv: []
 
   ## extra VolumeMounts for the airflow Pods
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-files.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-files.md
   extraVolumeMounts: []
 
   ## extra Volumes for the airflow Pods
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-files.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-persistent-volumes.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/mount-files.md
   extraVolumes: []
 
 ###################################
@@ -86,18 +86,18 @@ scheduler:
   resources: {}
 
   ## configs for the log-cleanup sidecar of the scheduler
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/log-cleanup.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/monitoring/log-cleanup.md
   logCleanup:
     enabled: true
     retentionMinutes: 21600
 
   ## configs for the scheduler Pods' liveness probe
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/scheduler-liveness-probe.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/monitoring/scheduler-liveness-probe.md
   livenessProbe:
     enabled: true
 
     ## configs for an additional check that ensures tasks are being created by the scheduler
-    ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/scheduler-liveness-probe.md
+    ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/monitoring/scheduler-liveness-probe.md
     taskCreationCheck:
       enabled: false
       thresholdSeconds: 300
@@ -120,7 +120,7 @@ web:
     externalPort: 8080
 
   ## configs generating the `webserver_config.py` file
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md#webserver_configpy
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/configuration/airflow-configs.md#webserver_configpy
   webserverConfig:
     ## the full content of the `webserver_config.py` file (as a string)
     stringOverride: |
@@ -151,7 +151,7 @@ workers:
   resources: {}
 
   ## configs for the log-cleanup sidecar of the worker Pods
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/log-cleanup.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/monitoring/log-cleanup.md
   logCleanup:
     enabled: true
     retentionMinutes: 21600
@@ -200,7 +200,7 @@ logs:
   path: /opt/airflow/logs
 
   ## configs for the logs PVC
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/monitoring/log-persistence.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/monitoring/log-persistence.md
   persistence:
     enabled: false
 
@@ -212,12 +212,12 @@ dags:
   path: /opt/airflow/dags
 
   ## configs for the dags PVC
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
   persistence:
     enabled: false
 
   ## configs for the git-sync sidecar
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/dags/load-dag-definitions.md
   gitSync:
     enabled: false
 
@@ -226,7 +226,7 @@ dags:
 ###################################
 ingress:
   ## if we should deploy Ingress resources
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/ingress.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/ingress.md
   enabled: false
 
 ###################################
@@ -247,7 +247,7 @@ serviceAccount:
 ###################################
 
 ## a list of extra Kubernetes manifests that will be deployed alongside the chart
-## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/kubernetes/extra-manifests.md
+## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/kubernetes/extra-manifests.md
 extraManifests: []
 
 ###################################
@@ -255,7 +255,7 @@ extraManifests: []
 ###################################
 pgbouncer:
   ## if the pgbouncer Deployment is created
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/database/pgbouncer.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/database/pgbouncer.md
   enabled: true
 
   ## resource requests/limits for the pgbouncer Pods
@@ -270,7 +270,7 @@ pgbouncer:
 ###################################
 postgresql:
   ## if the embedded postgres database is deployed
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/database/embedded-database.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/database/embedded-database.md
   ## [WARNING] the embedded Postgres is NOT SUITABLE for production deployments of Airflow
   ## [WARNING] consider using an external database with `externalDatabase.*`
   enabled: true
@@ -286,7 +286,7 @@ postgresql:
 ###################################
 externalDatabase:
   ## the type of external database
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/database/external-database.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/database/external-database.md
   type: postgres
 
 ###################################
@@ -294,7 +294,7 @@ externalDatabase:
 ###################################
 redis:
   ## if the `stable/redis` chart is used
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/database/embedded-redis.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/database/embedded-redis.md
   ## [WARNING] consider using an external database with `externalDatabase.*`
   enabled: true
 
@@ -332,5 +332,5 @@ redis:
 ###################################
 externalRedis:
   ## the host of the external redis
-  ## [FAQ] https://github.com/airflow-helm/charts/blob/main/charts/airflow/docs/faq/database/external-redis.md
+  ## [FAQ] https://github.com/shepherd44/airflow-helm-charts/blob/main/charts/airflow/docs/faq/database/external-redis.md
   host: localhost

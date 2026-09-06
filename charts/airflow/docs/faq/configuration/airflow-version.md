@@ -1,6 +1,6 @@
-[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#frequently-asked-questions)
+[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#frequently-asked-questions)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Set Airflow Version
 
@@ -10,32 +10,18 @@
 >
 > Many versions of airflow versions are supported by the chart, please see the [Airflow Version Support](../../../README.md#airflow-version-support) matrix.
 
-## Airflow 2.X
-
-For example, to use airflow `2.1.4`, with python `3.7`:
-
-```yaml
-airflow:
-  image:
-    repository: apache/airflow
-    tag: 2.1.4-python3.7
-```
-
-## Airflow 1.10
-
 > 🟥 __Warning__ 🟥
 >
 > This chart supports Apache Airflow 3.0.0 and above only. To run Airflow 2, use the `10.X.X` releases of this chart.
+> The tag must START with a semver, the chart reads the airflow version from it.
 
-For example, to use airflow `1.10.15`, with python `3.8`:
+For example, to use airflow `3.3.1`, with python `3.12`:
 
 ```yaml
 airflow:
-  # WARNING: this must be "true" for airflow 1.10
-  
   image:
     repository: apache/airflow
-    tag: 1.10.15-python3.8
+    tag: 3.3.1-python3.12
 ```
 
 ## Building a Custom Image

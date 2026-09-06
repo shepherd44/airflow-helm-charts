@@ -1,4 +1,4 @@
-{{- if and (.Values.serviceMonitor.enabled) (semverCompare ">=3.0.0" (include "airflow.version" .)) }}
+{{- if .Values.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

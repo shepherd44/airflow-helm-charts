@@ -1,4 +1,3 @@
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,5 +40,4 @@ spec:
   loadBalancerSourceRanges:
     {{- toYaml .Values.apiServer.service.loadBalancerSourceRanges | nindent 4 }}
   {{- end }}
-{{- end }}
 {{- end }}

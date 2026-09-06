@@ -6,7 +6,7 @@ airflow:
 dags:
   gitSync:
     enabled: true
-    repo: "https://github.com/airflow-helm/charts.git"
+    repo: "https://github.com/shepherd44/airflow-helm-charts.git"
 
     ## NOTE: an empty `branch` syncs the default branch of the remote repo
     branch: ""

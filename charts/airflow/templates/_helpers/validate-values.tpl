@@ -149,23 +149,12 @@
     {{ required "The `ingress.web.path` should NOT include a trailing '/'!" nil }}
     {{- end }}
     {{- if or .Values.airflow.config.AIRFLOW__API__BASE_URL .Values.airflow.config.AIRFLOW__WEBSERVER__BASE_URL }}
-      {{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
         {{- $webUrl := .Values.airflow.config.AIRFLOW__API__BASE_URL | urlParse }}
         {{- if not (eq (.Values.ingress.web.path | trimSuffix "/*") (get $webUrl "path")) }}
         {{ required (printf "The `ingress.web.path` must be compatible with `airflow.config.AIRFLOW__API__BASE_URL`! (try setting AIRFLOW__API__BASE_URL to 'http://{HOSTNAME}%s', rather than '%s')" (.Values.ingress.web.path | trimSuffix "/*") .Values.airflow.config.AIRFLOW__API__BASE_URL) nil }}
         {{- end }}
-      {{- else }}
-        {{- $webUrl := .Values.airflow.config.AIRFLOW__WEBSERVER__BASE_URL | urlParse }}
-        {{- if not (eq (.Values.ingress.web.path | trimSuffix "/*") (get $webUrl "path")) }}
-        {{ required (printf "The `ingress.web.path` must be compatible with `airflow.config.AIRFLOW__WEBSERVER__BASE_URL`! (try setting AIRFLOW__WEBSERVER__BASE_URL to 'http://{HOSTNAME}%s', rather than '%s')" (.Values.ingress.web.path | trimSuffix "/*") .Values.airflow.config.AIRFLOW__WEBSERVER__BASE_URL) nil }}
-        {{- end }}
-      {{- end }}
     {{- else }}
-      {{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
       {{ required (printf "If `ingress.web.path` is set, then `airflow.config.AIRFLOW__API__BASE_URL` must be set! (try setting AIRFLOW__API__BASE_URL to 'http://{HOSTNAME}%s')" (.Values.ingress.web.path | trimSuffix "/*")) nil }}
-      {{- else }}
-      {{ required (printf "If `ingress.web.path` is set, then `airflow.config.AIRFLOW__WEBSERVER__BASE_URL` must be set! (try setting AIRFLOW__WEBSERVER__BASE_URL to 'http://{HOSTNAME}%s')" (.Values.ingress.web.path | trimSuffix "/*")) nil }}
-      {{- end }}
     {{- end }}
   {{- end }}
 
@@ -288,7 +277,6 @@
 {{- end }}
 
 {{/* JWT secret is required for Airflow 3.0+ */}}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 {{- if and (not .Values.airflow.jwtSecret) (not .Values.airflow.jwtSecretName) }}
 {{- /* NOTE: this is a hard failure, not a warning. A generated key would come from
        `randAlphaNum`, which produces a new value on every render -- and under GitOps the
@@ -297,10 +285,8 @@
        There is no safe default here, so the chart refuses to render instead. */}}
 {{ required "For Airflow 3.0+, you must set either `airflow.jwtSecret` or `airflow.jwtSecretName`! This key signs the Task Execution API tokens and must be stable across renders and identical in every component -- see docs/faq/security/set-jwt-secret.md" nil }}
 {{- end }}
-{{- end }}
 
 {{/* Checks for Airflow 3.0+ requirements */}}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
   {{/* API Server must have at least 1 replica */}}
   {{- if lt (int .Values.apiServer.replicas) 1 }}
 # ###############################################################################
@@ -390,5 +376,4 @@
 # ###############################################################################
   {{ required "For Airflow 3.0+, use `ingress.apiServer` instead of `ingress.web`!" nil }}
   {{- end }}
-{{- end }}
 

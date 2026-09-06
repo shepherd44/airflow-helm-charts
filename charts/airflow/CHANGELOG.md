@@ -8,6 +8,25 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 TBD
 
+## [12.0.0] - 2026-09-06
+
+> 🟥 __IMPORTANT__ 🟥
+>
+> - the chart is now published to __GHCR as an OCI artifact__: `oci://ghcr.io/shepherd44/charts/airflow`
+> - the gh-pages helm repo is __frozen__ at `11.1.1`; it keeps serving every existing version, but nothing new is added
+> - consumers must move their `repoURL`, `helm repo add` no longer reaches new releases
+
+### Changed
+- the release workflow pushes the packaged chart to `oci://ghcr.io/shepherd44/charts` instead of running `chart-releaser`. The `airflow-<version>` tag chart-releaser used to create is now pushed by the workflow itself
+- `home`, `sources` and `maintainers` point at this fork rather than upstream `airflow-helm/charts`. Helm feeds `sources[0]` into the OCI `org.opencontainers.image.source` annotation, which is what links the GHCR package to its repository
+- the docs install with `helm install ... oci://ghcr.io/shepherd44/charts/airflow --version 12.X.X`; there is no `helm repo add` step for an OCI chart
+- the quickstart port-forwards `svc/<release>-api-server`. There has been no `-web` Service since `11.0.0`
+
+### Removed
+- every remaining Airflow 2 code path. `11.0.0` made the chart refuse to render below Airflow `3.0.0`, which left ~25 `semverCompare` guards that could no longer be false, an `airflow.jobs.base_job` import fallback for Airflow < 2.6, a `hasattr(Pool, "include_deferred")` probe for Airflow < 2.7, and `AIRFLOW__CELERY__WORKER_LOG_SERVER_PORT`, replaced by `[logging] worker_log_server_port` in Airflow 2.2 and absent from Airflow 3. Rendered output is unchanged apart from that config key
+- the `README.md` → gh-pages sync workflow, and the ArtifactHub badges, which advertise the upstream chart
+- `images/postgresql-bitnami`. The chart has run the official `postgres` image since `11.0.0`; the published image is untouched, because the `10.X.X` deployments still pull it
+
 ## [11.1.1] - 2026-08-15
 
 ### Fixed

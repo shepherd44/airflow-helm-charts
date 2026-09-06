@@ -156,8 +156,8 @@ kubectl run airflow-db-upgrade \
 Upgrade your Helm release:
 
 ```bash
-helm upgrade airflow airflow-helm/airflow \
-  --version 8.10.0 \
+helm upgrade airflow oci://ghcr.io/shepherd44/charts/airflow \
+  --version 12.0.0 \
   -f values.yaml \
   --namespace airflow
 ```
@@ -434,7 +434,10 @@ airflow:
 ```
 
 ```bash
-helm upgrade airflow airflow-helm/airflow -f values.yaml -n airflow
+## the 10.X.X (Airflow 2) releases only exist in the frozen gh-pages repo,
+## the GHCR registry starts at 12.0.0
+helm repo add airflow-stable https://shepherd44.github.io/airflow-helm-charts
+helm upgrade airflow airflow-stable/airflow --version 10.1.1 -f values.yaml -n airflow
 ```
 
 ### Step 3: Verify Rollback
@@ -455,7 +458,7 @@ kubectl get pods -l component=dag_processor -n airflow
 - [Official Airflow 3.0 Documentation](https://airflow.apache.org/docs/apache-airflow/3.0.0/)
 - [JWT Secret Security Guide](../faq/security/set-jwt-secret.md)
 - [Chart Configuration Guide](../faq/configuration/airflow-configs.md)
-- [Community Support](https://github.com/airflow-helm/charts/discussions)
+- [Community Support](https://github.com/shepherd44/airflow-helm-charts/discussions)
 
 ---
 
@@ -464,6 +467,6 @@ kubectl get pods -l component=dag_processor -n airflow
 If you encounter issues during migration:
 
 1. Check the [Troubleshooting section](#troubleshooting) above
-2. Search [existing issues](https://github.com/airflow-helm/charts/issues)
-3. Ask in [GitHub Discussions](https://github.com/airflow-helm/charts/discussions)
+2. Search [existing issues](https://github.com/shepherd44/airflow-helm-charts/issues)
+3. Ask in [GitHub Discussions](https://github.com/shepherd44/airflow-helm-charts/discussions)
 4. Review [official Airflow documentation](https://airflow.apache.org/docs/)

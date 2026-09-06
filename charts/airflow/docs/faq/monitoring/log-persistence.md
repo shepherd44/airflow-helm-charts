@@ -1,6 +1,6 @@
-[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#frequently-asked-questions)
+[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#frequently-asked-questions)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Manage Airflow Logs
 
@@ -124,7 +124,6 @@ consult [the official catalog](https://airflow.apache.org/docs/apache-airflow-pr
 
 > 🟥 __Warning__ 🟥
 >
-> These examples require Airflow 2.0+, if using Airflow 1.10, please consult the [Airflow 1.10.15 "Writing Logs" page](https://airflow.apache.org/docs/apache-airflow/1.10.15/howto/write-logs.html).
 
 <details>
 <summary>

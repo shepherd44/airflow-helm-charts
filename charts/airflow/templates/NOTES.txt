@@ -174,11 +174,7 @@ You have NOT set up persistence for worker task logs, do this by:
 {{- if and (not .Values.ingress.enabled) (eq $webServiceType "ClusterIP") }}
 It looks like you have NOT exposed the Airflow {{ $webComponentName }}, do this by:
   1. Using a Kubernetes Ingress with `ingress.*`
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
   2. Using a Kubernetes LoadBalancer/NodePort type Service with `apiServer.service.type`
-{{- else }}
-  2. Using a Kubernetes LoadBalancer/NodePort type Service with `web.service.type`
-{{- end }}
 {{ end }}
 
 {{- if .Values.ingress.enabled }}
@@ -211,7 +207,7 @@ Use these commands to port-forward the Services to your localhost:
 {{- end }}
 {{- if .Values.dagProcessor.enabled }}
   * DAG Processor:      kubectl get deploy/{{ include "airflow.fullname" . }}-dag-processor --namespace {{ .Release.Namespace }}
-{{- else if and (semverCompare ">=2.3.0" (include "airflow.version" .)) (.Values.dagProcessor.enabled) }}
+{{- else if .Values.dagProcessor.enabled }}
   * DAG Processor:      kubectl get deploy/{{ include "airflow.fullname" . }}-dag-processor --namespace {{ .Release.Namespace }} (standalone mode)
 {{- end }}
 {{ end }}
@@ -226,13 +222,8 @@ Use these commands to port-forward the Services to your localhost:
 {{ end }}
 
 {{- if $web_secret_warning }}
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 [CRITICAL] default API secret_key value!
   * HELP: set a custom value with `airflow.apiSecretKey` or `AIRFLOW__API__SECRET_KEY`
-{{- else }}
-[CRITICAL] default webserver secret_key value!
-  * HELP: set a custom value with `airflow.apiSecretKey` or `AIRFLOW__API__SECRET_KEY`
-{{- end }}
 {{ end }}
 
 {{- if $jwt_secret_warning }}

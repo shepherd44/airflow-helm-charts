@@ -91,7 +91,7 @@ airflow:
   ## - [SECURITY] For production, store in external secret manager and reference via `airflow.extraEnv`
   ## - Generate a secure JWT secret:
   ##   python -c "import secrets; print(secrets.token_urlsafe(32))"
-  ## - Documentation: https://github.com/airflow-helm/charts/tree/main/charts/airflow/docs/faq/security/set-jwt-secret.md
+  ## - Documentation: https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow/docs/faq/security/set-jwt-secret.md
   ##
   ## NOTE: Auto-generated secrets change on each `helm upgrade`, causing authentication failures
   ##       and restarts of all Airflow components until they pick up the new secret.
@@ -274,7 +274,7 @@ airflow:
   ##     - name: "pool_2"
   ##       description: "example pool with 2 cron policies"
   ##       slots: 0
-  ##       ## if deferred tasks count towards the slot limit, requires airflow 2.7.0+ (default: false)
+  ##       ## if deferred tasks count towards the slot limit (default: false)
   ##       include_deferred: false
   ##       ## at each sync interval, the policy with the most recently past `recurrence` is applied
   ##       policies:
@@ -813,9 +813,7 @@ scheduler:
     ## configs for an additional check that ensures tasks are being created by the scheduler
     ## - this check works by ensuring that the most recent LocalTaskJob had a `start_date` no more than
     ##   `taskCreationCheck.thresholdSeconds` seconds ago
-    ## - this check is useful because the scheduler can deadlock with a heartbeat, but not be scheduling new tasks:
-    ##   https://github.com/apache/airflow/issues/7935 - patched in airflow `2.0.2`
-    ##   https://github.com/apache/airflow/issues/15938 - patched in airflow `2.1.1`
+    ## - this check is useful because the scheduler can deadlock with a heartbeat, but not be scheduling new tasks
     ##
     taskCreationCheck:
       ## if the task creation check is enabled
@@ -1399,7 +1397,6 @@ workers:
 ###################################
 triggerer:
   ## if the airflow triggerer should be deployed
-  ## - [WARNING] the triggerer component was added in airflow 2.2.0
   ##
   enabled: true
 

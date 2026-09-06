@@ -14,11 +14,7 @@ The python sync script for pools.
 ## Imports ##
 #############
 from airflow.models import Pool
-{{- if semverCompare ">=3.0.0" (include "airflow.version" .) }}
 from airflow.utils.session import create_session
-{{- else }}
-from airflow.utils.db import create_session
-{{- end }}
 from croniter import croniter
 from datetime import datetime
 from typing import Tuple
@@ -65,9 +61,7 @@ class PoolWrapper(object):
     def as_pool(self) -> Pool:
         pool = Pool()
         pool.pool = self.name
-        # NOTE: include_deferred is only available in Airflow 2.7.0+
-        if hasattr(Pool, "include_deferred"):
-            pool.include_deferred = self.include_deferred
+        pool.include_deferred = self.include_deferred
         if self._has_policies():
             most_recent_policy = self._most_recent_policy()
             pool.slots = most_recent_policy.slots
@@ -144,7 +138,7 @@ def compare_pools(p1: Pool, p2: Pool) -> bool:
             p1.pool == p1.pool
             and p1.description == p2.description
             and p1.slots == p2.slots
-            and getattr(p1, "include_deferred", False) == getattr(p2, "include_deferred", False)
+            and p1.include_deferred == p2.include_deferred
     )
 
 
@@ -171,8 +165,7 @@ def sync_pool(pool_wrapper: PoolWrapper) -> None:
                 logging.info(f"Pool=`{p_name}` exists but has changed, updating...")
                 p_old.description = p_new.description
                 p_old.slots = p_new.slots
-                if hasattr(Pool, "include_deferred"):
-                    p_old.include_deferred = p_new.include_deferred
+                p_old.include_deferred = p_new.include_deferred
                 pool_updated = True
 
     if pool_added:

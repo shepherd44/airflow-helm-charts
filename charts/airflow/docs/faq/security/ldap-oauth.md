@@ -1,13 +1,13 @@
-[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/airflow-helm/charts/tree/main/charts/airflow#frequently-asked-questions)
+[🔗 Return to `Table of Contents` for more FAQ topics 🔗](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow#frequently-asked-questions)
 
-> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/airflow-helm/charts/tree/main/charts/airflow)
+> Note, this page was written for the [`User-Community Airflow Helm Chart`](https://github.com/shepherd44/airflow-helm-charts/tree/main/charts/airflow)
 
 # Integrate Airflow with LDAP or OAUTH
 
 > 🟥 __Warning__ 🟥
 > 
 > The `AUTH_ROLES_MAPPING` feature requires `Flask-Appbuilder>=3.2.0`.
-> Starting from Airflow 2.0.2, `Flask-Appbuilder>=3.2.0` is included by default,
+> `Flask-Appbuilder>=3.2.0` is included by default,
 > older versions of airflow will require you to [manually install](../configuration/extra-python-packages.md) `Flask-AppBuilder>=3.2.0`.
 
 > 🟦 __Tip__ 🟦
@@ -28,7 +28,7 @@
 > 🟥 __Warning__ 🟥
 >
 > LDAP integration requires the `python-ldap` python package to be installed.
-> Starting from Airflow 2.0.2, `python-ldap` is included by default,
+> `python-ldap` is included by default,
 > older versions of airflow will require you to [manually install](../configuration/extra-python-packages.md) `python-ldap`.
 
 Airflow authentication can be delegated to an LDAP server as it uses Flask-Appbuilder (FAB) for its web UI.
@@ -156,7 +156,7 @@ web:
 > 🟥 __Warning__ 🟥
 >
 > OAUTH integration requires the `Authlib` python package to be installed.
-> Starting from Airflow 2.2.0, `Authlib` is included by default,
+> `Authlib` is included by default,
 > older versions of airflow will require you to [manually install](../configuration/extra-python-packages.md) `Authlib`.
 
 Airflow authentication can be bridged to an OAUTH provider as it uses Flask-Appbuilder (FAB) for its web UI.
